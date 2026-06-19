@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BPMN-IO</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="toolbar-group">
+        <button type="button" id="btn-new" title="New diagram (Ctrl+N)">New</button>
+        <button type="button" id="btn-open" title="Open file (Ctrl+O)">Open</button>
+        <button type="button" id="btn-save" title="Save (Ctrl+S)">Save</button>
+        <button type="button" id="btn-save-as" title="Save as (Ctrl+Shift+S)">Save As</button>
+      </div>
+      <div class="toolbar-group">
+        <button type="button" id="btn-simulation" class="primary" title="Toggle token simulation (Ctrl+Shift+T)">
+          Token Simulation
+        </button>
+      </div>
+      <div class="toolbar-group toolbar-status">
+        <span id="file-name">Untitled</span>
+        <span id="dirty-indicator" hidden>•</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <div id="canvas" class="canvas"></div>
+      <aside id="properties-panel" class="properties-panel open">
+        <div id="properties-panel-resizer" class="properties-panel-resizer" draggable="true">
+          <div class="properties-panel-resize-handle"></div>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

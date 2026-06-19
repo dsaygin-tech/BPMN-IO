@@ -1,0 +1,54 @@
+{
+  "name": "bpmn-io",
+  "version": "1.0.0",
+  "description": "Desktop BPMN editor with token simulation",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "io.bpmn.desktop",
+    "productName": "BPMN-IO",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
+  },
+  "dependencies": {
+    "@bpmn-io/properties-panel": "^3.34.0",
+    "bpmn-js": "^18.11.0",
+    "bpmn-js-properties-panel": "^5.50.1",
+    "bpmn-js-token-simulation": "^0.39.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.1",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.2.0",
+    "wait-on": "^8.0.2"
+  }
+}
