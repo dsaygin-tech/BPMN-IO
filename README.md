@@ -39,6 +39,22 @@ npm run dist
 
 Установщики сохраняются в папку `release/`.
 
+### Сборка Windows x64 (не ARM)
+
+```bash
+# Windows x64
+npm run dist:win -- --x64
+
+# Альтернатива напрямую через electron-builder
+npm run build && electron-builder --win --x64
+```
+
+Если вы собираете на macOS и NSIS-установщик не собирается, используйте portable-сборку:
+
+```bash
+npx electron-builder --win --x64 --config.win.target=portable
+```
+
 ## Горячие клавиши
 
 | Действие | Сочетание |
