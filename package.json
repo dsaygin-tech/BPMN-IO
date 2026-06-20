@@ -1,6 +1,6 @@
 {
   "name": "bpmn-io",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Desktop BPMN editor with token simulation",
   "engines": {
     "node": ">=20"
@@ -42,7 +42,9 @@
     "@bpmn-io/properties-panel": "^3.34.0",
     "bpmn-js": "^18.11.0",
     "bpmn-js-properties-panel": "^5.50.1",
-    "bpmn-js-token-simulation": "^0.39.3"
+    "bpmn-js-token-simulation": "^0.39.3",
+    "jspdf": "^3.0.1",
+    "svg2pdf.js": "^2.5.0"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

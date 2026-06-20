@@ -6,11 +6,25 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
 
+const EXPORT_FILTERS = {
+  bpmn: [
+    { name: 'BPMN diagrams', extensions: ['bpmn'] },
+    { name: 'XML files', extensions: ['xml'] }
+  ],
+  svg: [{ name: 'SVG images', extensions: ['svg'] }],
+  png: [{ name: 'PNG images', extensions: ['png'] }],
+  pdf: [{ name: 'PDF documents', extensions: ['pdf'] }],
+  json: [{ name: 'JSON files', extensions: ['json'] }]
+};
+
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
 
 /** @type {string | null} */
 let currentFilePath = null;
+
+/** @type {string | null} */
+let pendingOpenFilePath = null;
 
 function getIndexPath() {
   if (isDev) {
@@ -43,9 +57,18 @@ function createWindow() {
     mainWindow.loadFile(indexPath);
   }
 
+  mainWindow.webContents.on('will-navigate', (event) => {
+    event.preventDefault();
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  if (pendingOpenFilePath) {
+    openFileByPath(pendingOpenFilePath);
+    pendingOpenFilePath = null;
+  }
 }
 
 function sendToRenderer(channel, payload) {
@@ -55,6 +78,24 @@ function sendToRenderer(channel, payload) {
 function updateWindowTitle(filePath) {
   const name = filePath ? filePath.split(/[/\\]/).pop() : 'Untitled';
   mainWindow?.setTitle(`${name} — BPMN-IO`);
+}
+
+async function readFileByPath(filePath) {
+  const content = await readFile(filePath, 'utf-8');
+
+  currentFilePath = filePath;
+  updateWindowTitle(filePath);
+
+  return { filePath, content };
+}
+
+async function openFileByPath(filePath) {
+  try {
+    const file = await readFileByPath(filePath);
+    sendToRenderer('menu:open', file);
+  } catch (error) {
+    dialog.showErrorBox('Open failed', `Could not open file:\n${error.message}`);
+  }
 }
 
 async function openFileDialog() {
@@ -71,13 +112,7 @@ async function openFileDialog() {
     return null;
   }
 
-  const filePath = result.filePaths[0];
-  const content = await readFile(filePath, 'utf-8');
-
-  currentFilePath = filePath;
-  updateWindowTitle(filePath);
-
-  return { filePath, content };
+  return readFileByPath(result.filePaths[0]);
 }
 
 async function saveFileDialog(xml, filePath = null) {
@@ -87,10 +122,7 @@ async function saveFileDialog(xml, filePath = null) {
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Save BPMN diagram',
       defaultPath: 'diagram.bpmn',
-      filters: [
-        { name: 'BPMN diagrams', extensions: ['bpmn'] },
-        { name: 'XML files', extensions: ['xml'] }
-      ]
+      filters: EXPORT_FILTERS.bpmn
     });
 
     if (result.canceled || !result.filePath) {
@@ -106,6 +138,31 @@ async function saveFileDialog(xml, filePath = null) {
   updateWindowTitle(targetPath);
 
   return { filePath: targetPath };
+}
+
+async function exportFileDialog({ content, defaultPath, format, encoding }) {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export diagram',
+    defaultPath,
+    filters: EXPORT_FILTERS[format] || [{ name: 'All files', extensions: ['*'] }]
+  });
+
+  if (result.canceled || !result.filePath) {
+    return null;
+  }
+
+  if (encoding === 'binary') {
+    await writeFile(result.filePath, Buffer.from(content, 'base64'));
+  } else {
+    await writeFile(result.filePath, content, 'utf-8');
+  }
+
+  if (format === 'bpmn') {
+    currentFilePath = result.filePath;
+    updateWindowTitle(result.filePath);
+  }
+
+  return { filePath: result.filePath };
 }
 
 function buildMenu() {
@@ -139,6 +196,32 @@ function buildMenu() {
           label: 'Save As…',
           accelerator: 'CmdOrCtrl+Shift+S',
           click: () => sendToRenderer('menu:save-as')
+        },
+        { type: 'separator' },
+        {
+          label: 'Export',
+          submenu: [
+            {
+              label: 'BPMN (.bpmn)…',
+              click: () => sendToRenderer('menu:export', { format: 'bpmn' })
+            },
+            {
+              label: 'SVG (.svg)…',
+              click: () => sendToRenderer('menu:export', { format: 'svg' })
+            },
+            {
+              label: 'PNG (.png)…',
+              click: () => sendToRenderer('menu:export', { format: 'png' })
+            },
+            {
+              label: 'PDF (.pdf)…',
+              click: () => sendToRenderer('menu:export', { format: 'pdf' })
+            },
+            {
+              label: 'JSON (.json)…',
+              click: () => sendToRenderer('menu:export', { format: 'json' })
+            }
+          ]
         },
         { type: 'separator' },
         { role: process.platform === 'darwin' ? 'close' : 'quit' }
@@ -202,12 +285,20 @@ function buildMenu() {
 
 ipcMain.handle('file:open', openFileDialog);
 
+ipcMain.handle('file:read', async (_event, filePath) => {
+  return readFileByPath(filePath);
+});
+
 ipcMain.handle('file:save', async (_event, { xml, filePath }) => {
   return saveFileDialog(xml, filePath);
 });
 
 ipcMain.handle('file:save-as', async (_event, { xml }) => {
   return saveFileDialog(xml);
+});
+
+ipcMain.handle('file:export', async (_event, payload) => {
+  return exportFileDialog(payload);
 });
 
 ipcMain.handle('file:get-current-path', () => currentFilePath);
@@ -217,19 +308,59 @@ ipcMain.on('file:path-changed', (_event, filePath) => {
   updateWindowTitle(filePath);
 });
 
-app.whenReady().then(() => {
-  buildMenu();
-  createWindow();
+if (process.platform === 'darwin') {
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+    if (mainWindow) {
+      openFileByPath(filePath);
+    } else {
+      pendingOpenFilePath = filePath;
     }
   });
-});
+}
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const filePath = argv.find((arg) => /\.(bpmn|xml)$/i.test(arg));
+
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+
+      mainWindow.focus();
+
+      if (filePath) {
+        openFileByPath(filePath);
+      }
+    }
+  });
+
+  app.whenReady().then(() => {
+    buildMenu();
+    createWindow();
+
+    const startupFile = process.argv.find((arg) => /\.(bpmn|xml)$/i.test(arg));
+
+    if (startupFile && mainWindow) {
+      openFileByPath(startupFile);
+    }
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+}

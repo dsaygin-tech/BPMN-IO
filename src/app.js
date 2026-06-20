@@ -12,6 +12,13 @@ import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css';
 
 import newDiagram from './resources/newDiagram.bpmn?raw';
+import { downloadExport, exportDiagram, getDefaultExportName } from './export.js';
+import { initExportMenu, renderExportMenu } from './export-ui.js';
+import {
+  confirmDiscardChanges,
+  initFileDrop,
+  initFileInput
+} from './file-open.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
@@ -89,19 +96,49 @@ async function createNewDiagram() {
 }
 
 async function openDiagram(content, filePath = null) {
-  await loadDiagram(content);
-  setFileName(filePath);
+  if (!confirmDiscardChanges(isDirty)) {
+    return;
+  }
+
+  try {
+    await loadDiagram(content);
+    setFileName(filePath);
+  } catch (error) {
+    console.error(error);
+    alert(`Failed to open diagram: ${error.message}`);
+  }
+}
+
+async function openFileFromDialog() {
+  if (window.electronAPI) {
+    const file = await window.electronAPI.openFile();
+
+    if (file) {
+      await openDiagram(file.content, file.filePath);
+    }
+
+    return;
+  }
+
+  openFilePicker();
 }
 
 async function saveDiagram(filePath = null) {
-  const { xml } = await modeler.saveXML({ format: true });
+  await exportDiagramToFormat('bpmn', filePath);
+}
+
+async function exportDiagramToFormat(format, filePath = null) {
+  const exportData = await exportDiagram(modeler, format);
+  const defaultName = getDefaultExportName(currentFilePath, format);
 
   if (window.electronAPI) {
-    const result = filePath
-      ? await window.electronAPI.saveFile(xml, filePath)
-      : await window.electronAPI.saveFileAs(xml);
+    const result = await window.electronAPI.exportFile({
+      ...exportData,
+      defaultPath: filePath || defaultName,
+      format
+    });
 
-    if (result?.filePath) {
+    if (result?.filePath && format === 'bpmn') {
       setFileName(result.filePath);
       setDirty(false);
     }
@@ -109,14 +146,11 @@ async function saveDiagram(filePath = null) {
     return;
   }
 
-  const blob = new Blob([xml], { type: 'application/xml' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filePath || 'diagram.bpmn';
-  link.click();
-  URL.revokeObjectURL(url);
-  setDirty(false);
+  downloadExport(exportData, defaultName);
+
+  if (format === 'bpmn') {
+    setDirty(false);
+  }
 }
 
 function toggleSimulation() {
@@ -129,26 +163,30 @@ modeler.on('commandStack.changed', () => {
 });
 
 document.querySelector('#btn-new').addEventListener('click', createNewDiagram);
-document.querySelector('#btn-open').addEventListener('click', async () => {
-  if (!window.electronAPI) {
-    return;
-  }
-
-  const file = await window.electronAPI.openFile();
-
-  if (file) {
-    await openDiagram(file.content, file.filePath);
-  }
-});
+document.querySelector('#btn-open').addEventListener('click', openFileFromDialog);
 document.querySelector('#btn-save').addEventListener('click', () => saveDiagram(currentFilePath));
 document.querySelector('#btn-save-as').addEventListener('click', () => saveDiagram());
 simulationButton.addEventListener('click', toggleSimulation);
+
+renderExportMenu();
+initExportMenu({
+  onExport: (format) => exportDiagramToFormat(format)
+});
+
+const openFilePicker = initFileInput({
+  onOpenFile: ({ content, filePath }) => openDiagram(content, filePath)
+});
+
+initFileDrop({
+  onOpenFile: ({ content, filePath }) => openDiagram(content, filePath)
+});
 
 if (window.electronAPI) {
   window.electronAPI.onMenu('menu:new', createNewDiagram);
   window.electronAPI.onMenu('menu:open', (file) => openDiagram(file.content, file.filePath));
   window.electronAPI.onMenu('menu:save', ({ filePath }) => saveDiagram(filePath));
   window.electronAPI.onMenu('menu:save-as', () => saveDiagram());
+  window.electronAPI.onMenu('menu:export', ({ format }) => exportDiagramToFormat(format));
   window.electronAPI.onMenu('menu:toggle-simulation', toggleSimulation);
 
   window.electronAPI.getCurrentPath().then((path) => {

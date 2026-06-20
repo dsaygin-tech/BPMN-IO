@@ -79,6 +79,35 @@ button.primary.active {
   border-color: #0a9f5c;
 }
 
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 180px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.dropdown-menu.open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-menu button {
+  width: 100%;
+  text-align: left;
+}
+
 .workspace {
   flex: 1;
   display: flex;
@@ -154,4 +183,31 @@ body.token-simulation-active .properties-panel .bio-properties-panel-checkbox {
 
 body.token-simulation-active .bts-notifications {
   bottom: 24px;
+}
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.92);
+  pointer-events: none;
+}
+
+.drop-overlay.visible {
+  display: block;
+}
+
+.drop-overlay-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 3px dashed #10d070;
+  border-radius: 8px;
+  color: #212121;
+  font-size: 24px;
+  font-weight: 500;
 }
