@@ -12,8 +12,13 @@ import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css';
 
 import newDiagram from './resources/newDiagram.bpmn?raw';
-import { downloadExport, exportDiagram, getDefaultExportName } from './export.js';
-import { initExportMenu, renderExportMenu } from './export-ui.js';
+import { downloadExport, exportDiagram, exportSimulationAnimation, EXPORT_FORMATS, getDefaultExportName } from './export.js';
+import { initExportMenu } from './export-ui.js';
+import {
+  beginRecordingProgress,
+  initRecordingUi,
+  requestAnimationExport
+} from './recording-ui.js';
 import {
   confirmDiscardChanges,
   initFileDrop,
@@ -28,6 +33,8 @@ const propertiesPanelResizer = document.querySelector('#properties-panel-resizer
 
 let currentFilePath = null;
 let isDirty = false;
+let refreshExportMenu = null;
+let exportSimulationButton = null;
 
 const DesktopModule = {
   __init__: [
@@ -41,6 +48,9 @@ const DesktopModule = {
           simulationButton.textContent = event.active
             ? 'Exit Simulation'
             : 'Token Simulation';
+
+          exportSimulationButton.hidden = false;
+          refreshExportMenu?.();
         });
       }
     ]
@@ -127,15 +137,14 @@ async function saveDiagram(filePath = null) {
   await exportDiagramToFormat('bpmn', filePath);
 }
 
-async function exportDiagramToFormat(format, filePath = null) {
-  const exportData = await exportDiagram(modeler, format);
+async function saveExportResult(exportData, format, filePath = null) {
   const defaultName = getDefaultExportName(currentFilePath, format);
 
   if (window.electronAPI) {
     const result = await window.electronAPI.exportFile({
       ...exportData,
       defaultPath: filePath || defaultName,
-      format
+      format: format.replace('simulation-', '')
     });
 
     if (result?.filePath && format === 'bpmn') {
@@ -150,6 +159,61 @@ async function exportDiagramToFormat(format, filePath = null) {
 
   if (format === 'bpmn') {
     setDirty(false);
+  }
+}
+
+async function exportSimulationAnimationToFile(format = null) {
+  let selectedFormat = format;
+
+  try {
+    if (!selectedFormat) {
+      const settings = await requestAnimationExport();
+      selectedFormat = settings.format;
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return;
+    }
+
+    throw error;
+  }
+
+  const progress = beginRecordingProgress();
+
+  try {
+    const exportData = await exportSimulationAnimation(modeler, selectedFormat, {
+      onProgress: progress.updateProgress,
+      signal: progress.signal
+    });
+
+    await saveExportResult(exportData, selectedFormat);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return;
+    }
+
+    throw error;
+  } finally {
+    progress.finish();
+  }
+}
+
+async function exportDiagramToFormat(format, filePath = null) {
+  try {
+    if (EXPORT_FORMATS[format]?.isAnimated) {
+      await exportSimulationAnimationToFile(format);
+      return;
+    }
+
+    const exportData = await exportDiagram(modeler, format);
+    await saveExportResult(exportData, format, filePath);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return;
+    }
+
+    console.error(error);
+    alert(error.message);
   }
 }
 
@@ -168,8 +232,19 @@ document.querySelector('#btn-save').addEventListener('click', () => saveDiagram(
 document.querySelector('#btn-save-as').addEventListener('click', () => saveDiagram());
 simulationButton.addEventListener('click', toggleSimulation);
 
-renderExportMenu();
-initExportMenu({
+exportSimulationButton = document.querySelector('#btn-export-simulation');
+exportSimulationButton.addEventListener('click', () => {
+  exportSimulationAnimationToFile().catch((error) => {
+    if (error.name !== 'AbortError') {
+      console.error(error);
+      alert(error.message);
+    }
+  });
+});
+
+initRecordingUi();
+
+refreshExportMenu = initExportMenu({
   onExport: (format) => exportDiagramToFormat(format)
 });
 

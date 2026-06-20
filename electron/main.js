@@ -14,7 +14,9 @@ const EXPORT_FILTERS = {
   svg: [{ name: 'SVG images', extensions: ['svg'] }],
   png: [{ name: 'PNG images', extensions: ['png'] }],
   pdf: [{ name: 'PDF documents', extensions: ['pdf'] }],
-  json: [{ name: 'JSON files', extensions: ['json'] }]
+  json: [{ name: 'JSON files', extensions: ['json'] }],
+  gif: [{ name: 'GIF animations', extensions: ['gif'] }],
+  webm: [{ name: 'WebM videos', extensions: ['webm'] }]
 };
 
 /** @type {BrowserWindow | null} */
@@ -220,6 +222,23 @@ function buildMenu() {
             {
               label: 'JSON (.json)…',
               click: () => sendToRenderer('menu:export', { format: 'json' })
+            },
+            { type: 'separator' },
+            {
+              label: 'Simulation PNG (.png)…',
+              click: () => sendToRenderer('menu:export', { format: 'simulation-png' })
+            },
+            {
+              label: 'Simulation PDF (.pdf)…',
+              click: () => sendToRenderer('menu:export', { format: 'simulation-pdf' })
+            },
+            {
+              label: 'Simulation GIF (.gif)…',
+              click: () => sendToRenderer('menu:export', { format: 'simulation-gif' })
+            },
+            {
+              label: 'Simulation WebM (.webm)…',
+              click: () => sendToRenderer('menu:export', { format: 'simulation-webm' })
             }
           ]
         },
@@ -282,6 +301,25 @@ function buildMenu() {
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
+
+ipcMain.handle('capture:region', async (_event, rect, options = {}) => {
+  if (!mainWindow) {
+    return null;
+  }
+
+  const image = await mainWindow.webContents.capturePage({
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height
+  });
+
+  if (options.format === 'png') {
+    return image.toPNG().toString('base64');
+  }
+
+  return image.toJPEG(92).toString('base64');
+});
 
 ipcMain.handle('file:open', openFileDialog);
 

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveFile: (xml, filePath) => ipcRenderer.invoke('file:save', { xml, filePath }),
   saveFileAs: (xml) => ipcRenderer.invoke('file:save-as', { xml }),
   exportFile: (payload) => ipcRenderer.invoke('file:export', payload),
+  captureRegion: (rect, options) => ipcRenderer.invoke('capture:region', rect, options),
   getCurrentPath: () => ipcRenderer.invoke('file:get-current-path'),
   setCurrentPath: (filePath) => ipcRenderer.send('file:path-changed', filePath),
   onMenu: (channel, callback) => {

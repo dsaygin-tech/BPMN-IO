@@ -22,6 +22,14 @@
         <button type="button" id="btn-simulation" class="primary" title="Toggle token simulation (Ctrl+Shift+T)">
           Token Simulation
         </button>
+        <button
+          type="button"
+          id="btn-export-simulation"
+          class="primary"
+          title="Export token simulation as animated GIF or WebM"
+        >
+          Export Animation
+        </button>
       </div>
       <div class="toolbar-group toolbar-status">
         <span id="file-name">Untitled</span>
@@ -32,6 +40,36 @@
     <div id="drop-overlay" class="drop-overlay">
       <div class="drop-overlay-box">
         <span>Drop BPMN file to open</span>
+      </div>
+    </div>
+
+    <dialog id="recording-dialog" class="recording-dialog">
+      <form method="dialog" class="recording-dialog-content">
+        <h2>Export simulation animation</h2>
+        <p>
+          Simulation will start automatically from the beginning and recording will stop
+          when all tokens reach the end.
+        </p>
+        <label class="recording-field">
+          <span>Format</span>
+          <select id="recording-format">
+            <option value="simulation-gif">GIF — opens everywhere</option>
+            <option value="simulation-webm">WebM — smoother video</option>
+          </select>
+        </label>
+        <div class="recording-actions">
+          <button type="button" id="recording-cancel">Cancel</button>
+          <button type="button" id="recording-start" class="primary">Start export</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="recording-progress" class="recording-overlay">
+      <div class="recording-overlay-card">
+        <div class="recording-indicator">REC</div>
+        <progress id="recording-progress-bar" max="100" value="0"></progress>
+        <p id="recording-progress-label">Recording simulation... 0%</p>
+        <button type="button" id="recording-progress-cancel">Cancel</button>
       </div>
     </div>
 

@@ -1,5 +1,10 @@
 import { jsPDF } from 'jspdf';
 import { svg2pdf } from 'svg2pdf.js';
+import {
+  CAPTURE_SCALE_STATIC,
+  captureSimulationFrame
+} from './simulation-capture.js';
+import { recordSimulationAnimation } from './simulation-recorder.js';
 
 const MIN_EXPORT_PADDING = 48;
 const EXPORT_PADDING_RATIO = 0.08;
@@ -39,8 +44,58 @@ export const EXPORT_FORMATS = {
     extension: 'pdf',
     mimeType: 'application/pdf',
     encoding: 'binary'
+  },
+  'simulation-png': {
+    id: 'simulation-png',
+    label: 'Simulation PNG',
+    extension: 'png',
+    mimeType: 'image/png',
+    encoding: 'binary',
+    requiresSimulation: true,
+    nameSuffix: '-simulation'
+  },
+  'simulation-pdf': {
+    id: 'simulation-pdf',
+    label: 'Simulation PDF',
+    extension: 'pdf',
+    mimeType: 'application/pdf',
+    encoding: 'binary',
+    requiresSimulation: true,
+    nameSuffix: '-simulation'
+  },
+  'simulation-gif': {
+    id: 'simulation-gif',
+    label: 'Simulation GIF',
+    extension: 'gif',
+    mimeType: 'image/gif',
+    encoding: 'binary',
+    requiresSimulation: true,
+    isAnimated: true,
+    nameSuffix: '-simulation'
+  },
+  'simulation-webm': {
+    id: 'simulation-webm',
+    label: 'Simulation WebM',
+    extension: 'webm',
+    mimeType: 'video/webm',
+    encoding: 'binary',
+    requiresSimulation: true,
+    isAnimated: true,
+    nameSuffix: '-simulation'
   }
 };
+
+export function isSimulationActive(modeler) {
+  if (document.body.classList.contains('token-simulation-active')) {
+    return true;
+  }
+
+  try {
+    return modeler.get('toggleMode')._active ?? modeler.get('toggleMode').isActive?.();
+  } catch {
+    return false;
+  }
+}
 
 export function getDefaultExportName(filePath, format) {
   const config = EXPORT_FORMATS[format];
@@ -48,7 +103,7 @@ export function getDefaultExportName(filePath, format) {
     ? filePath.split(/[/\\]/).pop().replace(/\.[^.]+$/, '')
     : 'diagram';
 
-  return `${baseName}.${config.extension}`;
+  return `${baseName}${config.nameSuffix ?? ''}.${config.extension}`;
 }
 
 function getExportPadding(width, height) {
@@ -157,6 +212,27 @@ function serializeModdleElement(element, seen = new WeakSet()) {
   return result;
 }
 
+async function captureSimulationSnapshot(modeler) {
+  if (!isSimulationActive(modeler)) {
+    throw new Error('Enable Token Simulation before exporting a simulation snapshot.');
+  }
+
+  return captureSimulationFrame(modeler, CAPTURE_SCALE_STATIC);
+}
+
+export async function exportSimulationAnimation(modeler, format, options = {}) {
+  const config = EXPORT_FORMATS[format];
+
+  if (!config?.isAnimated) {
+    throw new Error(`Unsupported animation format: ${format}`);
+  }
+
+  const bytes = await recordSimulationAnimation(modeler, format, options);
+  const content = arrayBufferToBase64(bytes);
+
+  return { content, ...config };
+}
+
 async function getPreparedSvg(modeler) {
   const { svg } = await modeler.saveSVG({ format: true });
   return prepareSvg(svg);
@@ -224,6 +300,19 @@ async function svgToPdf(svg) {
   return pdf.output('arraybuffer');
 }
 
+async function canvasToPdf(canvas) {
+  const imageData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({
+    orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+    unit: 'px',
+    format: [canvas.width, canvas.height],
+    hotfixes: ['px_scaling']
+  });
+
+  pdf.addImage(imageData, 'PNG', 0, 0, canvas.width, canvas.height);
+  return pdf.output('arraybuffer');
+}
+
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -237,8 +326,8 @@ function blobToBase64(blob) {
   });
 }
 
-function arrayBufferToBase64(arrayBuffer) {
-  const bytes = new Uint8Array(arrayBuffer);
+function arrayBufferToBase64(input) {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
   let binary = '';
 
   for (let index = 0; index < bytes.length; index += 1) {
@@ -255,6 +344,10 @@ export async function exportDiagram(modeler, format) {
     throw new Error(`Unsupported format: ${format}`);
   }
 
+  if (config.requiresSimulation && !config.isAnimated && !isSimulationActive(modeler)) {
+    throw new Error('Enable Token Simulation before exporting a simulation snapshot.');
+  }
+
   if (format === 'bpmn') {
     const { xml } = await modeler.saveXML({ format: true });
     return { content: xml, ...config };
@@ -264,6 +357,28 @@ export async function exportDiagram(modeler, format) {
     const definitions = modeler.getDefinitions();
     const json = serializeModdleElement(definitions);
     return { content: JSON.stringify(json, null, 2), ...config };
+  }
+
+  if (format === 'simulation-png') {
+    const snapshot = await captureSimulationSnapshot(modeler);
+    const pngBlob = await new Promise((resolve, reject) => {
+      snapshot.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+
+        reject(new Error('Failed to create PNG'));
+      }, 'image/png');
+    });
+    const content = await blobToBase64(pngBlob);
+    return { content, ...config };
+  }
+
+  if (format === 'simulation-pdf') {
+    const snapshot = await captureSimulationSnapshot(modeler);
+    const content = arrayBufferToBase64(await canvasToPdf(snapshot));
+    return { content, ...config };
   }
 
   const preparedSvg = await getPreparedSvg(modeler);
@@ -304,7 +419,7 @@ function base64ToBlob(base64, mimeType) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
 
-  for (let index = 0; index < binary.length; index += 1) {
+  for (let index = 0; index < bytes.length; index += 1) {
     bytes[index] = binary.charCodeAt(index);
   }
 
