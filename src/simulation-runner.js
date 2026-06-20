@@ -1,9 +1,17 @@
 import { ScopeTraits } from 'bpmn-js-token-simulation/lib/simulator/ScopeTraits.js';
-import { sleep } from './simulation-capture.js';
+import { sleep, waitNextFrame } from './simulation-capture.js';
 
-const MAX_RECORDING_MS = 120000;
+const MAX_RECORDING_MS = 600000;
+const MAX_WAIT_FOR_START_MS = 300000;
 const IDLE_TAIL_FRAMES = 30;
-const STARTUP_GRACE_FRAMES = 90;
+const STARTUP_GRACE_FRAMES = 180;
+
+const BPMN_CONTAINER_TYPES = new Set([
+  'bpmn:Process',
+  'bpmn:Collaboration',
+  'bpmn:Participant',
+  'bpmn:Lane'
+]);
 
 export async function prepareAutoSimulation(modeler) {
   const toggleMode = modeler.get('toggleMode');
@@ -39,6 +47,38 @@ export async function prepareAutoSimulation(modeler) {
   };
 }
 
+export async function prepareInteractiveSimulation(modeler) {
+  const toggleMode = modeler.get('toggleMode');
+
+  if (!toggleMode._active) {
+    toggleMode.toggleMode(true);
+    await sleep(100);
+  }
+
+  return {
+    elementRegistry: modeler.get('elementRegistry'),
+    simulator: modeler.get('simulator')
+  };
+}
+
+export async function waitForSimulationStart(modeler, signal) {
+  const startedAt = performance.now();
+
+  while (performance.now() - startedAt < MAX_WAIT_FOR_START_MS) {
+    if (signal?.aborted) {
+      throw new DOMException('Recording cancelled', 'AbortError');
+    }
+
+    if (isSimulationActive(modeler)) {
+      return;
+    }
+
+    await sleep(100);
+  }
+
+  throw new Error('Simulation did not start. Press play on a start event to begin recording.');
+}
+
 function clearPausePoints(modeler) {
   const simulator = modeler.get('simulator');
 
@@ -64,9 +104,21 @@ function triggerStartEvents(modeler) {
   }
 }
 
-function waitNextFrame() {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
+export function getEndEvents(modeler) {
+  return modeler.get('elementRegistry').filter(({ type }) => type === 'bpmn:EndEvent');
+}
+
+export function hasTokenAtEndEvent(modeler) {
+  const endEvents = getEndEvents(modeler);
+
+  return endEvents.some((element) => {
+    const gfx = modeler.get('canvas').getGraphics(element);
+
+    if (!gfx) {
+      return false;
+    }
+
+    return Boolean(gfx.querySelector('.bts-token-count:not(.inactive)'));
   });
 }
 
@@ -78,13 +130,40 @@ export function countActiveAnimations(modeler) {
   return count;
 }
 
-export function hasRunningScopes(modeler) {
+export function isSimulationAnimatingInDom(modeler) {
+  const container = modeler.get('canvas').getContainer();
+  return Boolean(container.querySelector('.bts-animation-tokens .bts-token'));
+}
+
+export function countDomWaitingTokens(modeler) {
+  const container = modeler.get('canvas').getContainer();
+  return container.querySelectorAll('.bts-token-count.waiting:not(.inactive)').length;
+}
+
+export function hasExecutableScopes(modeler) {
   const simulator = modeler.get('simulator');
-  return simulator.findScopes({ trait: ScopeTraits.RUNNING }).length > 0;
+  const scopes = simulator.findScopes({ trait: ScopeTraits.ACTIVE });
+
+  return scopes.some((scope) => {
+    const type = scope.element?.type;
+
+    if (!type || BPMN_CONTAINER_TYPES.has(type)) {
+      return false;
+    }
+
+    if (type === 'bpmn:SubProcess') {
+      return simulator.findScopes({ parent: scope, trait: ScopeTraits.ACTIVE }).length > 0;
+    }
+
+    return true;
+  });
 }
 
 export function isSimulationActive(modeler) {
-  return hasRunningScopes(modeler) || countActiveAnimations(modeler) > 0;
+  return countActiveAnimations(modeler) > 0
+    || isSimulationAnimatingInDom(modeler)
+    || countDomWaitingTokens(modeler) > 0
+    || hasExecutableScopes(modeler);
 }
 
 export function pauseSimulationAnimations(modeler) {
@@ -93,6 +172,18 @@ export function pauseSimulationAnimations(modeler) {
 
 export function resumeSimulationAnimations(modeler) {
   modeler.get('animation').play();
+}
+
+export function pauseSimulationForCapture(modeler) {
+  const eventBus = modeler.get('eventBus');
+  pauseSimulationAnimations(modeler);
+  eventBus.fire('tokenSimulation.pauseSimulation');
+}
+
+export function resumeSimulationAfterCapture(modeler) {
+  const eventBus = modeler.get('eventBus');
+  eventBus.fire('tokenSimulation.playSimulation');
+  resumeSimulationAnimations(modeler);
 }
 
 export function advanceSimulationFrame(modeler, deltaMs) {
@@ -149,6 +240,51 @@ export function createRecordingController(modeler, frameMs) {
       }
 
       return false;
+    }
+  };
+}
+
+export function createInteractiveRecordingController(modeler) {
+  let sawActivity = false;
+  let idleFrames = 0;
+  const startedAt = performance.now();
+
+  return {
+    updateState() {
+      if (isSimulationActive(modeler)) {
+        sawActivity = true;
+        idleFrames = 0;
+        return;
+      }
+
+      if (sawActivity) {
+        idleFrames += 1;
+      }
+    },
+    shouldStop({ stopRequested, signal }) {
+      if (signal?.aborted) {
+        throw new DOMException('Recording cancelled', 'AbortError');
+      }
+
+      if (performance.now() - startedAt > MAX_RECORDING_MS) {
+        throw new Error('Simulation recording timed out before completion.');
+      }
+
+      if (stopRequested?.()) {
+        return sawActivity;
+      }
+
+      if (!sawActivity) {
+        return false;
+      }
+
+      const endEvents = getEndEvents(modeler);
+
+      if (endEvents.length > 0) {
+        return idleFrames >= IDLE_TAIL_FRAMES && !isSimulationActive(modeler);
+      }
+
+      return idleFrames >= IDLE_TAIL_FRAMES;
     }
   };
 }

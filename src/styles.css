@@ -266,6 +266,70 @@ body.token-simulation-active .bts-notifications {
   font-size: 13px;
 }
 
+.recording-field input[type='number'] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.bjs-container.export-capturing .djs-container {
+  box-shadow: none !important;
+}
+
+.bjs-container.export-capturing .djs-overlays,
+.bjs-container.export-capturing .bjs-breadcrumbs,
+.bjs-container.export-capturing .bts-notifications,
+.bjs-container.export-capturing .bts-set-animation-speed,
+.bjs-container.export-capturing .bts-toggle-mode,
+.bjs-container.export-capturing .bts-context-pad {
+  visibility: hidden !important;
+}
+
+.crop-selector-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+.crop-selector-hint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: rgba(33, 33, 33, 0.9);
+  color: #fff;
+  font-size: 13px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.crop-selector-selection {
+  position: absolute;
+  display: none;
+  border: 2px dashed #1a73e8;
+  background: rgba(26, 115, 232, 0.14);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.crop-selector-selection.visible {
+  display: block;
+}
+
+.recording-crop-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
 .recording-actions {
   display: flex;
   justify-content: flex-end;
@@ -319,4 +383,10 @@ body.token-simulation-active .bts-notifications {
 .recording-overlay-card p {
   margin: 0;
   font-size: 13px;
+}
+
+.recording-overlay-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }

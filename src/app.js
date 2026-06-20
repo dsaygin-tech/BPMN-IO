@@ -19,6 +19,7 @@ import {
   initRecordingUi,
   requestAnimationExport
 } from './recording-ui.js';
+import { requestManualCropArea } from './crop-selector.js';
 import {
   confirmDiscardChanges,
   initFileDrop,
@@ -164,11 +165,15 @@ async function saveExportResult(exportData, format, filePath = null) {
 
 async function exportSimulationAnimationToFile(format = null) {
   let selectedFormat = format;
+  let recordMode = 'auto';
+  let cropOptions = {};
 
   try {
     if (!selectedFormat) {
       const settings = await requestAnimationExport();
       selectedFormat = settings.format;
+      recordMode = settings.recordMode ?? 'auto';
+      cropOptions = settings.cropOptions ?? {};
     }
   } catch (error) {
     if (error.name === 'AbortError') {
@@ -178,12 +183,28 @@ async function exportSimulationAnimationToFile(format = null) {
     throw error;
   }
 
-  const progress = beginRecordingProgress();
+  if (cropOptions.cropMode === 'manual') {
+    try {
+      const customViewBox = await requestManualCropArea(modeler);
+      cropOptions = { ...cropOptions, customViewBox };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return;
+      }
+
+      throw error;
+    }
+  }
+
+  const progress = beginRecordingProgress({ recordMode });
 
   try {
     const exportData = await exportSimulationAnimation(modeler, selectedFormat, {
       onProgress: progress.updateProgress,
-      signal: progress.signal
+      signal: progress.signal,
+      recordMode,
+      stopRequested: progress.stopRequested,
+      cropOptions
     });
 
     await saveExportResult(exportData, selectedFormat);
