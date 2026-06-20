@@ -3,6 +3,8 @@ import {
   beginCaptureSession,
   captureSessionFrame,
   endCaptureSession,
+  paceFrame,
+  PLAYBACK_FRAME_MS,
   sleep
 } from './simulation-capture.js';
 import {
@@ -56,7 +58,7 @@ function createGifEncoder(width, height) {
 
       encoder.writeFrame(index, width, height, {
         palette: frameIndex === 0 ? globalPalette : undefined,
-        delay: FRAME_MS,
+        delay: PLAYBACK_FRAME_MS,
         dispose: 2,
         repeat: frameIndex === 0 ? 0 : undefined
       });
@@ -126,6 +128,7 @@ async function runInteractiveRecording(modeler, onProgress, signal, stopRequeste
 
   try {
     while (true) {
+      const frameStartedAt = performance.now();
       pauseSimulationForCapture(modeler);
 
       const frame = await captureSessionFrame(session);
@@ -144,7 +147,7 @@ async function runInteractiveRecording(modeler, onProgress, signal, stopRequeste
       }
 
       resumeSimulationAfterCapture(modeler);
-      await sleep(FRAME_MS);
+      await paceFrame(frameStartedAt, PLAYBACK_FRAME_MS);
     }
   } finally {
     pauseSimulationForCapture(modeler);
@@ -167,6 +170,7 @@ async function recordSteppedGif(modeler, onProgress, signal, cropOptions = {}) {
 
   try {
     while (true) {
+      const frameStartedAt = performance.now();
       controller.shouldAbort(signal);
 
       const frame = await captureSessionFrame(session);
@@ -189,6 +193,7 @@ async function recordSteppedGif(modeler, onProgress, signal, cropOptions = {}) {
       }
 
       controller.advance();
+      await paceFrame(frameStartedAt, PLAYBACK_FRAME_MS);
     }
   } finally {
     endCaptureSession(session);
@@ -215,6 +220,7 @@ async function recordSteppedWebm(modeler, onProgress, signal, cropOptions = {}) 
 
   try {
     while (true) {
+      const frameStartedAt = performance.now();
       controller.shouldAbort(signal);
 
       const frame = await captureSessionFrame(session);
@@ -237,6 +243,7 @@ async function recordSteppedWebm(modeler, onProgress, signal, cropOptions = {}) 
       }
 
       controller.advance();
+      await paceFrame(frameStartedAt, PLAYBACK_FRAME_MS);
     }
   } finally {
     endCaptureSession(session);

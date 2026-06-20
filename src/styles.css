@@ -297,6 +297,11 @@ body.token-simulation-active .bts-notifications {
   display: none !important;
 }
 
+.bjs-container.export-capturing .export-hide-token-overlay,
+.export-hide-token-overlay {
+  visibility: hidden !important;
+}
+
 .crop-selector-overlay {
   position: absolute;
   inset: 0;

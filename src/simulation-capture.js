@@ -6,6 +6,14 @@ export const MAX_EXPORT_DIMENSION = 4096;
 export const MIN_EXPORT_PADDING = 48;
 export const EXPORT_PADDING_RATIO = 0.08;
 export const TIGHT_EXPORT_PADDING = 16;
+export const EXPORT_FPS = 60;
+export const EXPORT_FRAME_MS = 1000 / EXPORT_FPS;
+export const PLAYBACK_FRAME_MS = Math.max(10, Math.round(EXPORT_FRAME_MS / 10) * 10);
+
+const TOKEN_BOUNCE_PERIOD_MS = 1000;
+const TOKEN_BOUNCE_HEIGHT_PX = 5;
+const TOKEN_SIZE_PX = 25;
+const TOKEN_STACK_OFFSET_PX = -8;
 
 const SVG_EXPORT_ARTIFACTS = [
   '.djs-outline',
@@ -217,73 +225,154 @@ async function renderSvgToCanvas(modeler, session) {
   return canvas;
 }
 
-function getTokenBounceOffset(frameIndex, frameMs = 1000 / 60) {
-  const phase = (frameIndex * frameMs % 1000) / 1000;
-  return 2.5 * (1 - Math.cos(phase * 2 * Math.PI));
+function getTokenBounceOffset(elapsedMs) {
+  const phase = (elapsedMs % TOKEN_BOUNCE_PERIOD_MS) / TOKEN_BOUNCE_PERIOD_MS;
+
+  if (phase <= 0.5) {
+    return TOKEN_BOUNCE_HEIGHT_PX * cssEase(phase / 0.5);
+  }
+
+  return TOKEN_BOUNCE_HEIGHT_PX * (1 - cssEase((phase - 0.5) / 0.5));
 }
 
-function mapClientRectToCanvas(clientRect, containerBounds, exportDimensions) {
-  const scaleX = exportDimensions.width / containerBounds.width;
-  const scaleY = exportDimensions.height / containerBounds.height;
-
-  return {
-    x: (clientRect.left - containerBounds.left) * scaleX,
-    y: (clientRect.top - containerBounds.top) * scaleY,
-    width: clientRect.width * scaleX,
-    height: clientRect.height * scaleY
-  };
+function cssEase(progress) {
+  return progress * progress * (3 - 2 * progress);
 }
 
-function compositeWaitingTokens(context, modeler, session) {
-  const container = getDiagramContainer(modeler);
-  const containerBounds = container.getBoundingClientRect();
-  const tokens = container.querySelectorAll('.bts-token-count:not(.inactive)');
-  const frameIndex = session.frameIndex ?? 0;
-  const bounceOffset = getTokenBounceOffset(frameIndex);
-  const scaleY = session.exportDimensions.height / containerBounds.height;
+function getCaptureElapsedMs(session) {
+  return (session.frameIndex ?? 0) * PLAYBACK_FRAME_MS;
+}
 
-  for (const tokenElement of tokens) {
-    const rect = tokenElement.getBoundingClientRect();
+function getTokenOverlayScale(overlay, viewbox) {
+  const minZoom = overlay.show?.minZoom;
 
-    if (rect.width <= 0 || rect.height <= 0) {
+  if (typeof minZoom !== 'number' || viewbox.scale >= minZoom) {
+    return 1;
+  }
+
+  return minZoom / viewbox.scale;
+}
+
+function getWaitingTokenCacheKey(modeler) {
+  const overlays = modeler.get('overlays').get({ type: 'bts-token-count' }) ?? [];
+
+  return overlays.map((overlay) => {
+    const element = overlay.element;
+    const tokenCount = overlay.htmlContainer?.querySelectorAll('.bts-token-count:not(.inactive)').length ?? 0;
+
+    if (!element) {
+      return `none:${tokenCount}`;
+    }
+
+    return [
+      element.id,
+      tokenCount,
+      Math.round(element.x),
+      Math.round(element.y),
+      Math.round(element.width),
+      Math.round(element.height)
+    ].join(':');
+  }).join('|');
+}
+
+function buildWaitingTokenRenderLayouts(modeler, session) {
+  const canvas = modeler.get('canvas');
+  const viewbox = canvas.viewbox();
+  const { exportViewBox, exportDimensions } = session;
+  const exportScale = exportDimensions.width / exportViewBox.width;
+  const overlays = modeler.get('overlays').get({ type: 'bts-token-count' }) ?? [];
+  const layouts = [];
+
+  for (const overlay of overlays) {
+    const element = overlay.element;
+    const htmlContainer = overlay.htmlContainer;
+
+    if (!element || element.x === undefined || !htmlContainer || htmlContainer.offsetParent === null) {
       continue;
     }
 
-    const mapped = mapClientRectToCanvas(rect, containerBounds, session.exportDimensions);
-    const style = getComputedStyle(tokenElement);
-    const animatedTop = parseFloat(style.top) || 0;
-    const text = tokenElement.textContent.trim();
-    const centerX = mapped.x + mapped.width / 2;
-    const centerY = mapped.y + mapped.height / 2 - animatedTop * scaleY + bounceOffset * scaleY;
-    const radius = mapped.width / 2;
+    const position = overlay.position || { bottom: 10, left: -15 };
+    const overlayScale = getTokenOverlayScale(overlay, viewbox);
+    const tokenSize = TOKEN_SIZE_PX * overlayScale;
+    const left = position.left ?? 0;
+    const top = element.height - (position.bottom ?? 0);
+    const tokens = htmlContainer.querySelectorAll('.bts-token-count:not(.inactive)');
+
+    tokens.forEach((tokenElement, tokenIndex) => {
+      const style = getComputedStyle(tokenElement);
+      const stackOffset = tokenIndex * TOKEN_STACK_OFFSET_PX * overlayScale;
+      const diagramX = element.x + left + stackOffset + tokenSize / 2;
+      const diagramY = element.y + top + tokenSize / 2;
+
+      layouts.push({
+        centerX: (diagramX - exportViewBox.x) * exportScale,
+        centerY: (diagramY - exportViewBox.y) * exportScale,
+        radius: tokenSize / 2 * exportScale,
+        bounceScale: exportScale,
+        style,
+        text: tokenElement.textContent.trim()
+      });
+    });
+  }
+
+  return layouts;
+}
+
+function resolveWaitingTokenRenderLayouts(modeler, session) {
+  const cacheKey = getWaitingTokenCacheKey(modeler);
+
+  if (session.waitingTokenCacheKey !== cacheKey || !session.waitingTokenLayouts) {
+    session.waitingTokenCacheKey = cacheKey;
+    session.waitingTokenLayouts = buildWaitingTokenRenderLayouts(modeler, session);
+  }
+
+  return session.waitingTokenLayouts;
+}
+
+function compositeWaitingTokens(context, session, layouts = resolveWaitingTokenRenderLayouts(session.modeler, session)) {
+  if (!layouts.length) {
+    return;
+  }
+
+  const bounceOffset = getTokenBounceOffset(getCaptureElapsedMs(session));
+
+  for (const { centerX, centerY, radius, bounceScale, style, text } of layouts) {
+    const drawY = centerY + bounceOffset * bounceScale;
 
     context.beginPath();
-    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    context.arc(centerX, drawY, radius, 0, Math.PI * 2);
     context.fillStyle = style.backgroundColor;
     context.fill();
 
     if (text) {
       context.fillStyle = style.color;
-      context.font = `${Math.max(10, Math.round(mapped.height * 0.56))}px Arial, sans-serif`;
+      context.font = `${Math.max(10, Math.round(radius * 2 * 0.56))}px Arial, sans-serif`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(text, centerX, centerY);
+      context.fillText(text, centerX, drawY);
     }
   }
 }
 
-async function captureViaHtml2Canvas(modeler, session) {
+async function captureViaHtml2Canvas(modeler, session, layouts = resolveWaitingTokenRenderLayouts(modeler, session)) {
   hideExportChrome(modeler);
+  setTokenOverlayCaptureHidden(modeler, true);
 
   const target = getDiagramContainer(modeler);
-  const canvas = await html2canvas(target, {
-    backgroundColor: '#ffffff',
-    scale: window.devicePixelRatio || 1,
-    useCORS: true,
-    logging: false,
-    imageTimeout: 0,
-    removeContainer: true
-  });
+  let canvas;
+
+  try {
+    canvas = await html2canvas(target, {
+      backgroundColor: '#ffffff',
+      scale: window.devicePixelRatio || 1,
+      useCORS: true,
+      logging: false,
+      imageTimeout: 0,
+      removeContainer: true
+    });
+  } finally {
+    setTokenOverlayCaptureHidden(modeler, false);
+  }
 
   const { exportViewBox, exportDimensions } = session;
   const viewbox = modeler.get('canvas').viewbox();
@@ -314,7 +403,15 @@ async function captureViaHtml2Canvas(modeler, session) {
     output.height
   );
 
+  compositeWaitingTokens(context, session, layouts);
+
   return output;
+}
+
+function setTokenOverlayCaptureHidden(modeler, hidden) {
+  getDiagramContainer(modeler).querySelectorAll('.djs-overlay-bts-token-count').forEach((element) => {
+    element.classList.toggle('export-hide-token-overlay', hidden);
+  });
 }
 
 export function beginCaptureSession(modeler, options = {}) {
@@ -334,7 +431,9 @@ export function beginCaptureSession(modeler, options = {}) {
     exportViewBox,
     exportDimensions,
     previousViewbox,
-    cropOptions
+    cropOptions,
+    captureStartedAt: performance.now(),
+    frameIndex: 0
   };
 }
 
@@ -348,13 +447,18 @@ export function endCaptureSession(session) {
 }
 
 export async function renderSessionFrame(session) {
+  const layouts = resolveWaitingTokenRenderLayouts(session.modeler, session);
+
   try {
+    setTokenOverlayCaptureHidden(session.modeler, true);
     const canvas = await renderSvgToCanvas(session.modeler, session);
-    compositeWaitingTokens(canvas.getContext('2d'), session.modeler, session);
+    compositeWaitingTokens(canvas.getContext('2d'), session, layouts);
     return canvas;
   } catch (error) {
     console.warn('SVG render failed, falling back to html2canvas', error);
-    return captureViaHtml2Canvas(session.modeler, session);
+    return captureViaHtml2Canvas(session.modeler, session, layouts);
+  } finally {
+    setTokenOverlayCaptureHidden(session.modeler, false);
   }
 }
 
@@ -364,9 +468,8 @@ export async function captureSessionFrame(session) {
     await waitNextFrame();
   }
 
-  const frame = await renderSessionFrame(session);
   session.frameIndex = (session.frameIndex ?? 0) + 1;
-  return frame;
+  return renderSessionFrame(session);
 }
 
 export async function captureSimulationFrame(modeler, scale = CAPTURE_SCALE_STATIC, cropOptions = {}) {
