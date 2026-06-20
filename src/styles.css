@@ -278,13 +278,23 @@ body.token-simulation-active .bts-notifications {
   box-shadow: none !important;
 }
 
-.bjs-container.export-capturing .djs-overlays,
-.bjs-container.export-capturing .bjs-breadcrumbs,
+.bjs-container.export-capturing .bts-scopes,
+.bjs-container.export-capturing .bts-palette,
+.bjs-container.export-capturing .bts-toggle-mode,
 .bjs-container.export-capturing .bts-notifications,
 .bjs-container.export-capturing .bts-set-animation-speed,
-.bjs-container.export-capturing .bts-toggle-mode,
-.bjs-container.export-capturing .bts-context-pad {
-  visibility: hidden !important;
+.bjs-container.export-capturing .bjs-breadcrumbs,
+.bjs-container.export-capturing .djs-overlay-bts-context-menu,
+.bjs-container.export-capturing .djs-overlay-bts-element-notification,
+.bjs-container.export-capturing .bts-context-pad,
+.bjs-container.export-capturing .bts-element-notification,
+.bjs-container.export-capturing .djs-context-pad,
+.bjs-container.export-capturing .djs-palette,
+.bjs-container.export-capturing .djs-popup,
+.bjs-container.export-capturing .djs-tooltip,
+.bjs-container.export-capturing .recording-overlay,
+.bjs-container.export-capturing .bts-log {
+  display: none !important;
 }
 
 .crop-selector-overlay {

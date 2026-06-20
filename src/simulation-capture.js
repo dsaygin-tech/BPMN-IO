@@ -113,37 +113,11 @@ export function restoreViewboxState(modeler, viewbox) {
 }
 
 export function hideExportChrome(modeler) {
-  const bjs = getSimulationChromeRoot(modeler);
-  const djs = getDiagramContainer(modeler);
-
-  bjs.classList.add('export-capturing');
-
-  bjs.querySelectorAll(
-    '.djs-overlays, .bjs-breadcrumbs, .bts-notifications, .bts-set-animation-speed, .bts-toggle-mode, .bts-context-pad, .djs-context-pad, .djs-popup, .djs-tooltip, .recording-overlay'
-  ).forEach((element) => {
-    element.style.visibility = 'hidden';
-  });
-
-  djs.querySelectorAll(':scope > .djs-overlays, :scope > [class*="bts-"]').forEach((element) => {
-    element.style.visibility = 'hidden';
-  });
+  getSimulationChromeRoot(modeler).classList.add('export-capturing');
 }
 
 export function showExportChrome(modeler) {
-  const bjs = getSimulationChromeRoot(modeler);
-  const djs = getDiagramContainer(modeler);
-
-  bjs.classList.remove('export-capturing');
-
-  bjs.querySelectorAll(
-    '.djs-overlays, .bjs-breadcrumbs, .bts-notifications, .bts-set-animation-speed, .bts-toggle-mode, .bts-context-pad, .djs-context-pad, .djs-popup, .djs-tooltip, .recording-overlay'
-  ).forEach((element) => {
-    element.style.visibility = '';
-  });
-
-  djs.querySelectorAll(':scope > .djs-overlays, :scope > [class*="bts-"]').forEach((element) => {
-    element.style.visibility = '';
-  });
+  getSimulationChromeRoot(modeler).classList.remove('export-capturing');
 }
 
 function shouldIncludeExportStyle(text) {
@@ -159,7 +133,8 @@ function shouldIncludeExportStyle(text) {
     || text.includes('.bts-circle')
     || text.includes('.bts-text')
     || text.includes('.bts-animation-tokens')
-    || text.includes('.bts-token-count')) {
+    || text.includes('.bts-token-count')
+    || text.includes('bts-jump')) {
     return true;
   }
 
@@ -242,6 +217,61 @@ async function renderSvgToCanvas(modeler, session) {
   return canvas;
 }
 
+function getTokenBounceOffset(frameIndex, frameMs = 1000 / 60) {
+  const phase = (frameIndex * frameMs % 1000) / 1000;
+  return 2.5 * (1 - Math.cos(phase * 2 * Math.PI));
+}
+
+function mapClientRectToCanvas(clientRect, containerBounds, exportDimensions) {
+  const scaleX = exportDimensions.width / containerBounds.width;
+  const scaleY = exportDimensions.height / containerBounds.height;
+
+  return {
+    x: (clientRect.left - containerBounds.left) * scaleX,
+    y: (clientRect.top - containerBounds.top) * scaleY,
+    width: clientRect.width * scaleX,
+    height: clientRect.height * scaleY
+  };
+}
+
+function compositeWaitingTokens(context, modeler, session) {
+  const container = getDiagramContainer(modeler);
+  const containerBounds = container.getBoundingClientRect();
+  const tokens = container.querySelectorAll('.bts-token-count:not(.inactive)');
+  const frameIndex = session.frameIndex ?? 0;
+  const bounceOffset = getTokenBounceOffset(frameIndex);
+  const scaleY = session.exportDimensions.height / containerBounds.height;
+
+  for (const tokenElement of tokens) {
+    const rect = tokenElement.getBoundingClientRect();
+
+    if (rect.width <= 0 || rect.height <= 0) {
+      continue;
+    }
+
+    const mapped = mapClientRectToCanvas(rect, containerBounds, session.exportDimensions);
+    const style = getComputedStyle(tokenElement);
+    const animatedTop = parseFloat(style.top) || 0;
+    const text = tokenElement.textContent.trim();
+    const centerX = mapped.x + mapped.width / 2;
+    const centerY = mapped.y + mapped.height / 2 - animatedTop * scaleY + bounceOffset * scaleY;
+    const radius = mapped.width / 2;
+
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    context.fillStyle = style.backgroundColor;
+    context.fill();
+
+    if (text) {
+      context.fillStyle = style.color;
+      context.font = `${Math.max(10, Math.round(mapped.height * 0.56))}px Arial, sans-serif`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(text, centerX, centerY);
+    }
+  }
+}
+
 async function captureViaHtml2Canvas(modeler, session) {
   hideExportChrome(modeler);
 
@@ -319,7 +349,9 @@ export function endCaptureSession(session) {
 
 export async function renderSessionFrame(session) {
   try {
-    return await renderSvgToCanvas(session.modeler, session);
+    const canvas = await renderSvgToCanvas(session.modeler, session);
+    compositeWaitingTokens(canvas.getContext('2d'), session.modeler, session);
+    return canvas;
   } catch (error) {
     console.warn('SVG render failed, falling back to html2canvas', error);
     return captureViaHtml2Canvas(session.modeler, session);
@@ -327,7 +359,14 @@ export async function renderSessionFrame(session) {
 }
 
 export async function captureSessionFrame(session) {
-  return renderSessionFrame(session);
+  if (!session._overlaysReady) {
+    session._overlaysReady = true;
+    await waitNextFrame();
+  }
+
+  const frame = await renderSessionFrame(session);
+  session.frameIndex = (session.frameIndex ?? 0) + 1;
+  return frame;
 }
 
 export async function captureSimulationFrame(modeler, scale = CAPTURE_SCALE_STATIC, cropOptions = {}) {
