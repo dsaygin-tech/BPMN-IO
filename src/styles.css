@@ -82,10 +82,6 @@ body.token-simulation-active .simulation-controls {
   display: inline-flex;
 }
 
-body.token-simulation-active .bts-toggle-mode {
-  display: none;
-}
-
 body.token-simulation-active .simulation-parent.paused .bts-animation-tokens .bts-token {
   animation-play-state: paused;
 }

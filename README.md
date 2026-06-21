@@ -72,7 +72,7 @@ npx electron-builder --win --x64 --config.win.target=portable
 
 ## Симуляция токена
 
-Нажмите **Token Simulation** — по умолчанию токены **запускаются сразу** (режим **Auto-start**). Переключите **Start → Interactive**, если хотите запускать вручную с ▶ на Start Event.
+Нажмите **Token Simulation** на панели холста (или `Ctrl/Cmd + Shift + T`). По умолчанию токены **запускаются сразу** (режим **Auto-start**).
 
 ### Режимы запуска (видны в режиме симуляции)
 

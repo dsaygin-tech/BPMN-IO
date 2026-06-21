@@ -112,6 +112,10 @@ export function initSimulationUi({
 
   eventBus.on('tokenSimulation.toggleMode', (event) => {
     onSimulationActiveChange?.(event.active);
+
+    if (event.active) {
+      handleSimulationEnter();
+    }
   });
 
   // Run after bpmn-js-token-simulation resets the simulator (priority 5000).

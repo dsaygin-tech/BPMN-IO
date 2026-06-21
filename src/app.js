@@ -30,7 +30,6 @@ import { initSimulationUi } from './simulation-ui.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
-const simulationButton = document.querySelector('#btn-simulation');
 const propertiesPanel = document.querySelector('#properties-panel');
 const propertiesPanelResizer = document.querySelector('#properties-panel-resizer');
 
@@ -48,12 +47,7 @@ const DesktopModule = {
       function (eventBus, toggleMode) {
         eventBus.on('tokenSimulation.toggleMode', (event) => {
           document.body.classList.toggle('token-simulation-active', event.active);
-          simulationButton.classList.toggle('active', event.active);
-          simulationButton.textContent = event.active
-            ? 'Exit Simulation'
-            : 'Token Simulation';
-
-          exportSimulationButton.hidden = false;
+          exportSimulationButton.hidden = !event.active;
           refreshExportMenu?.();
         });
       }
@@ -243,14 +237,7 @@ async function exportDiagramToFormat(format, filePath = null) {
 }
 
 function toggleSimulation() {
-  const toggleMode = modeler.get('toggleMode');
-  const wasActive = toggleMode._active;
-
-  toggleMode.toggleMode();
-
-  if (!wasActive) {
-    simulationUi?.enter();
-  }
+  modeler.get('toggleMode').toggleMode();
 }
 
 simulationUi = initSimulationUi({
@@ -268,9 +255,9 @@ document.querySelector('#btn-new').addEventListener('click', createNewDiagram);
 document.querySelector('#btn-open').addEventListener('click', openFileFromDialog);
 document.querySelector('#btn-save').addEventListener('click', () => saveDiagram(currentFilePath));
 document.querySelector('#btn-save-as').addEventListener('click', () => saveDiagram());
-simulationButton.addEventListener('click', toggleSimulation);
 
 exportSimulationButton = document.querySelector('#btn-export-simulation');
+exportSimulationButton.hidden = true;
 exportSimulationButton.addEventListener('click', () => {
   exportSimulationAnimationToFile().catch((error) => {
     if (error.name !== 'AbortError') {
