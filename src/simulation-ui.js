@@ -90,14 +90,17 @@ export function initSimulationUi({
     afterLibraryReset(modeler, { startMode, stepMode }).catch(console.error);
   }
 
-  startModeSelect.addEventListener('change', () => {
+  function onStartModeChange() {
     applyStartMode(startModeSelect.value, { runImmediately: true }).catch(console.error);
-  });
+  }
 
-  stepModeCheckbox.addEventListener('change', () => {
+  function onStepModeChange() {
     stepMode = stepModeCheckbox.checked;
     setStepMode(modeler, stepMode);
-  });
+  }
+
+  startModeSelect.addEventListener('change', onStartModeChange);
+  stepModeCheckbox.addEventListener('change', onStepModeChange);
 
   const eventBus = modeler.get('eventBus');
 
@@ -128,6 +131,10 @@ export function initSimulationUi({
   });
 
   return {
+    dispose() {
+      startModeSelect.removeEventListener('change', onStartModeChange);
+      stepModeCheckbox.removeEventListener('change', onStepModeChange);
+    },
     getStartMode: () => startMode,
     setStartMode: (mode) => applyStartMode(mode, { runImmediately: true }),
     isStepMode: () => stepMode,

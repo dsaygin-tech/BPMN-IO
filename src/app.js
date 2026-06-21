@@ -4,13 +4,25 @@ import SimulationSupportModule from 'bpmn-js-token-simulation/lib/simulation-sup
 import lintModule from 'bpmn-js-bpmnlint';
 import BpmnColorPickerModule from 'bpmn-js-color-picker';
 import { CreateAppendAnythingModule } from 'bpmn-js-create-append-anything';
+import sketchyRendererModule from 'bpmn-js-sketchy';
+import {
+  SKETCHY_TEXT_RENDERER,
+  initSketchyUi,
+  isSketchyEnabled
+} from './sketchy-toggle.js';
 import gridModule from 'diagram-js-grid';
 import minimapModule from 'diagram-js-minimap';
-import defaultTranslate from 'diagram-js/lib/i18n/translate/translate.js';
 import {
   BpmnPropertiesPanelModule,
   BpmnPropertiesProviderModule
 } from 'bpmn-js-properties-panel';
+import {
+  createTranslateModule,
+  getLocale,
+  initLocaleUi
+} from './i18n.js';
+import { applyAppUiLocale, t } from './app-ui-i18n.js';
+import { translateUserMessage } from './user-messages.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
@@ -29,6 +41,7 @@ import { initExportMenu } from './export-ui.js';
 import {
   beginRecordingProgress,
   initRecordingUi,
+  refreshRecordingUi,
   requestAnimationExport
 } from './recording-ui.js';
 import { requestManualCropArea } from './crop-selector.js';
@@ -52,17 +65,7 @@ let isDirty = false;
 let refreshExportMenu = null;
 let exportSimulationButton = null;
 let simulationUi = null;
-
-const MINIMAP_LABELS = {
-  'Open minimap': 'MiniMap',
-  'Close minimap': 'Close'
-};
-
-const CustomTranslateModule = {
-  translate: ['value', function (template, replacements) {
-    return defaultTranslate(MINIMAP_LABELS[template] || template, replacements);
-  }]
-};
+let keyboardHelpUi = null;
 
 const DesktopModule = {
   __init__: [
@@ -91,12 +94,15 @@ const DesktopModule = {
   ]
 };
 
-const modeler = new BpmnModeler({
-  container: '#canvas',
-  linting: {
-    bpmnlint: bpmnlintConfig
-  },
-  additionalModules: [
+function getModelerOptions() {
+  return {
+    sketchyEnabled: isSketchyEnabled(),
+    locale: getLocale()
+  };
+}
+
+function buildAdditionalModules({ sketchyEnabled, locale }) {
+  const modules = [
     BpmnPropertiesPanelModule,
     BpmnPropertiesProviderModule,
     TokenSimulationModule,
@@ -106,14 +112,80 @@ const modeler = new BpmnModeler({
     CreateAppendAnythingModule,
     gridModule,
     minimapModule,
-    CustomTranslateModule,
+    createTranslateModule(locale),
     CyrillicKeyboardModule,
     DesktopModule
-  ],
-  propertiesPanel: {
-    parent: '#properties-panel'
+  ];
+
+  if (sketchyEnabled) {
+    modules.push(sketchyRendererModule);
   }
-});
+
+  return modules;
+}
+
+function createModeler({ sketchyEnabled, locale }) {
+  return new BpmnModeler({
+    container: '#canvas',
+    linting: {
+      bpmnlint: bpmnlintConfig
+    },
+    ...(sketchyEnabled ? { textRenderer: SKETCHY_TEXT_RENDERER } : {}),
+    additionalModules: buildAdditionalModules({ sketchyEnabled, locale }),
+    propertiesPanel: {
+      parent: '#properties-panel'
+    }
+  });
+}
+
+let suppressDirtyTracking = false;
+
+function onCommandStackChanged() {
+  if (suppressDirtyTracking) {
+    return;
+  }
+
+  setDirty(true);
+}
+
+function attachModeler(modelerInstance) {
+  simulationUi?.dispose();
+  simulationUi = initSimulationUi({
+    modeler: modelerInstance,
+    onSimulationActiveChange: () => {
+      refreshExportMenu?.();
+    }
+  });
+
+  modelerInstance.on('commandStack.changed', onCommandStackChanged);
+}
+
+let modeler = createModeler(getModelerOptions());
+
+async function recreateModeler(options = getModelerOptions()) {
+  const wasDirty = isDirty;
+  const { xml } = await modeler.saveXML({ format: true });
+  const viewbox = modeler.get('canvas').viewbox();
+
+  modeler.destroy();
+  modeler = createModeler(options);
+  attachModeler(modeler);
+
+  suppressDirtyTracking = true;
+
+  try {
+    const { warnings } = await modeler.importXML(xml);
+
+    if (warnings.length) {
+      console.warn(warnings);
+    }
+
+    modeler.get('canvas').viewbox(viewbox);
+    setDirty(wasDirty);
+  } finally {
+    suppressDirtyTracking = false;
+  }
+}
 
 function setDirty(dirty) {
   isDirty = dirty;
@@ -122,7 +194,7 @@ function setDirty(dirty) {
 
 function setFileName(filePath) {
   currentFilePath = filePath;
-  const name = filePath ? filePath.split(/[/\\]/).pop() : 'Untitled';
+  const name = filePath ? filePath.split(/[/\\]/).pop() : t('file.untitled');
   fileNameEl.textContent = name;
 
   if (window.electronAPI) {
@@ -142,7 +214,7 @@ async function loadDiagram(xml) {
 }
 
 async function createNewDiagram() {
-  if (isDirty && !confirm('Discard unsaved changes?')) {
+  if (isDirty && !confirm(t('confirm.discardChanges'))) {
     return;
   }
 
@@ -160,7 +232,7 @@ async function openDiagram(content, filePath = null) {
     setFileName(filePath);
   } catch (error) {
     console.error(error);
-    alert(`Failed to open diagram: ${error.message}`);
+    alert(t('alert.openFailed', undefined, { message: error.message }));
   }
 }
 
@@ -278,7 +350,7 @@ async function exportDiagramToFormat(format, filePath = null) {
     }
 
     console.error(error);
-    alert(error.message);
+    alert(translateUserMessage(error.message));
   }
 }
 
@@ -286,12 +358,7 @@ function toggleSimulation() {
   modeler.get('toggleMode').toggleMode();
 }
 
-simulationUi = initSimulationUi({
-  modeler,
-  onSimulationActiveChange: () => {
-    refreshExportMenu?.();
-  }
-});
+attachModeler(modeler);
 
 initAppShortcuts({
   onNew: createNewDiagram,
@@ -301,14 +368,38 @@ initAppShortcuts({
   onToggleSimulation: toggleSimulation
 });
 
-initKeyboardHelp({
+keyboardHelpUi = initKeyboardHelp({
   button: document.querySelector('#btn-shortcuts'),
   dialog: document.querySelector('#shortcuts-dialog'),
   content: document.querySelector('#shortcuts-content')
 });
 
-modeler.on('commandStack.changed', () => {
-  setDirty(true);
+initSketchyUi({
+  toggle: document.querySelector('#sketchy-mode'),
+  onToggle: (sketchyEnabled) => recreateModeler({
+    ...getModelerOptions(),
+    sketchyEnabled
+  })
+});
+
+initLocaleUi({
+  select: document.querySelector('#locale-select'),
+  onChange: async (locale) => {
+    applyAppUiLocale(locale, {
+      refreshExportMenu,
+      refreshRecordingUi,
+      refreshKeyboardHelp: (nextLocale) => keyboardHelpUi?.refresh(nextLocale)
+    });
+
+    if (currentFilePath === null) {
+      fileNameEl.textContent = t('file.untitled', locale);
+    }
+
+    await recreateModeler({
+      ...getModelerOptions(),
+      locale
+    });
+  }
 });
 
 document.querySelector('#btn-new').addEventListener('click', createNewDiagram);
@@ -322,7 +413,7 @@ exportSimulationButton.addEventListener('click', () => {
   exportSimulationAnimationToFile().catch((error) => {
     if (error.name !== 'AbortError') {
       console.error(error);
-      alert(error.message);
+      alert(translateUserMessage(error.message));
     }
   });
 });
@@ -332,6 +423,13 @@ initRecordingUi();
 refreshExportMenu = initExportMenu({
   onExport: (format) => exportDiagramToFormat(format)
 });
+
+applyAppUiLocale(getLocale(), {
+  refreshExportMenu,
+  refreshRecordingUi,
+  refreshKeyboardHelp: (locale) => keyboardHelpUi?.refresh(locale)
+});
+setFileName(currentFilePath);
 
 const openFilePicker = initFileInput({
   onOpenFile: ({ content, filePath }) => openDiagram(content, filePath)

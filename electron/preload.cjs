@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   captureRegion: (rect, options) => ipcRenderer.invoke('capture:region', rect, options),
   getCurrentPath: () => ipcRenderer.invoke('file:get-current-path'),
   setCurrentPath: (filePath) => ipcRenderer.send('file:path-changed', filePath),
+  setLocale: (locale) => ipcRenderer.send('app:set-locale', locale),
   onMenu: (channel, callback) => {
     const handler = (_event, payload) => callback(payload);
     ipcRenderer.on(channel, handler);

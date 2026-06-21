@@ -1,3 +1,5 @@
+import { t } from './app-ui-i18n.js';
+
 const BPMN_EXTENSIONS = new Set(['bpmn', 'xml']);
 
 export function isBpmnFileName(fileName) {
@@ -10,7 +12,7 @@ export function confirmDiscardChanges(isDirty) {
     return true;
   }
 
-  return confirm('Discard unsaved changes?');
+  return confirm(t('confirm.discardChanges'));
 }
 
 export async function readLocalFile(file) {
@@ -87,7 +89,7 @@ export function initFileDrop({ onOpenFile }) {
     }
 
     if (!isBpmnFileName(file.name)) {
-      alert('Only .bpmn and .xml files are supported.');
+      alert(t('alert.unsupportedFile'));
       return;
     }
 
@@ -96,7 +98,7 @@ export function initFileDrop({ onOpenFile }) {
       await onOpenFile(openedFile);
     } catch (error) {
       console.error(error);
-      alert(`Failed to open file: ${error.message}`);
+      alert(t('alert.fileOpenFailed', undefined, { message: error.message }));
     }
   });
 }
@@ -121,7 +123,7 @@ export function initFileInput({ onOpenFile }) {
       await onOpenFile(openedFile);
     } catch (error) {
       console.error(error);
-      alert(`Failed to open file: ${error.message}`);
+      alert(t('alert.fileOpenFailed', undefined, { message: error.message }));
     }
   });
 

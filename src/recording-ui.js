@@ -1,3 +1,6 @@
+import { t } from './app-ui-i18n.js';
+import { getLocale } from './i18n.js';
+
 const dialog = document.querySelector('#recording-dialog');
 const progressOverlay = document.querySelector('#recording-progress');
 const modeSelect = document.querySelector('#recording-mode');
@@ -15,23 +18,26 @@ const progressStopButton = document.querySelector('#recording-progress-stop');
 let activeAbortController = null;
 let stopRequested = false;
 
-const PHASE_LABELS = {
-  prepare: 'Preparing simulation...',
-  wait: 'Waiting for simulation start...',
-  record: 'Recording animation...',
-  encode: 'Encoding file...'
-};
+function getPhaseLabels(locale = getLocale()) {
+  return {
+    prepare: t('recording.progress.prepare', locale),
+    wait: t('recording.progress.wait', locale),
+    record: t('recording.progress.record', locale),
+    encode: t('recording.progress.encode', locale)
+  };
+}
 
-const MODE_DESCRIPTIONS = {
-  auto: 'Simulation starts automatically from the beginning. Recording stops when all tokens finish.',
-  interactive: 'Start the simulation yourself. Recording stops when you click Stop or when a final end event is reached.'
-};
-
-function updateCropFieldsVisibility() {
+function updateCropFieldsVisibility(locale = getLocale()) {
   const cropMode = cropModeSelect.value;
   cropPaddingField.hidden = cropMode !== 'custom';
   cropHint.hidden = cropMode !== 'manual';
-  startButton.textContent = cropMode === 'manual' ? 'Draw area…' : 'Start export';
+  startButton.textContent = cropMode === 'manual'
+    ? t('recording.drawArea', locale)
+    : t('recording.start', locale);
+}
+
+function updateModeDescription(locale = getLocale()) {
+  modeDescription.textContent = t(`recording.modeDescription.${modeSelect.value}`, locale);
 }
 
 export function initRecordingUi() {
@@ -48,7 +54,7 @@ export function initRecordingUi() {
   });
 
   modeSelect.addEventListener('change', () => {
-    modeDescription.textContent = MODE_DESCRIPTIONS[modeSelect.value] ?? MODE_DESCRIPTIONS.auto;
+    updateModeDescription();
   });
 
   cropModeSelect.addEventListener('change', updateCropFieldsVisibility);
@@ -89,7 +95,7 @@ export function requestAnimationExport() {
       finish(reject, new DOMException('Recording cancelled', 'AbortError'));
     };
 
-    modeDescription.textContent = MODE_DESCRIPTIONS[modeSelect.value] ?? MODE_DESCRIPTIONS.auto;
+    updateModeDescription();
     updateCropFieldsVisibility();
     startButton.addEventListener('click', handleStart);
     dialog.addEventListener('cancel', handleCancel);
@@ -98,13 +104,16 @@ export function requestAnimationExport() {
 }
 
 export function beginRecordingProgress({ recordMode = 'auto' } = {}) {
+  const locale = getLocale();
+  const phaseLabels = getPhaseLabels(locale);
+
   activeAbortController = new AbortController();
   stopRequested = false;
   progressOverlay.classList.add('visible');
   progressBar.value = 0;
-  progressLabel.textContent = PHASE_LABELS.prepare;
+  progressLabel.textContent = phaseLabels.prepare;
   progressStopButton.hidden = recordMode !== 'interactive';
-  progressCancelButton.textContent = 'Cancel';
+  progressCancelButton.textContent = t('recording.cancel', locale);
 
   return {
     signal: activeAbortController.signal,
@@ -112,7 +121,7 @@ export function beginRecordingProgress({ recordMode = 'auto' } = {}) {
     updateProgress({ phase = 'record', ratio = 0 }) {
       const percent = Math.round(ratio * 100);
       progressBar.value = percent;
-      progressLabel.textContent = `${PHASE_LABELS[phase] ?? PHASE_LABELS.record} ${percent}%`;
+      progressLabel.textContent = `${phaseLabels[phase] ?? phaseLabels.record} ${percent}%`;
     },
     finish() {
       progressOverlay.classList.remove('visible');
@@ -124,4 +133,9 @@ export function beginRecordingProgress({ recordMode = 'auto' } = {}) {
       activeAbortController?.abort();
     }
   };
+}
+
+export function refreshRecordingUi(locale = getLocale()) {
+  updateModeDescription(locale);
+  updateCropFieldsVisibility(locale);
 }

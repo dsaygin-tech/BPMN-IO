@@ -1,3 +1,6 @@
+import { t } from './app-ui-i18n.js';
+import { getLocale } from './i18n.js';
+
 import { getDiagramContainer } from './simulation-capture.js';
 
 const MIN_SELECTION_SIZE = 12;
@@ -41,6 +44,7 @@ function clientRectToViewBox(modeler, clientRect) {
 
 export function requestManualCropArea(modeler) {
   const container = getDiagramContainer(modeler);
+  const locale = getLocale();
 
   return new Promise((resolve, reject) => {
     const overlay = document.createElement('div');
@@ -48,7 +52,7 @@ export function requestManualCropArea(modeler) {
 
     const hint = document.createElement('div');
     hint.className = 'crop-selector-hint';
-    hint.textContent = 'Drag to select the recording area. Press Esc to cancel.';
+    hint.textContent = t('crop.hint', locale);
 
     const selection = document.createElement('div');
     selection.className = 'crop-selector-selection';

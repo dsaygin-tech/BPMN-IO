@@ -4,10 +4,9 @@
 + bpmn-js-color-picker 
 + bpmn-js-create-append-anything 
 bpmn-js-sketchy
-bpmn-js-embedded-comments
+- bpmn-js-embedded-comments
 + bpmnlint 
 bpmn-js-i18n
-bpmn-js-create-append-anything
 
 
 

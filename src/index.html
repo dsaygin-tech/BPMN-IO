@@ -1,48 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BPMN-IO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nothing+You+Could+Do&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="toolbar">
       <div class="toolbar-group">
-        <button type="button" id="btn-new" title="New diagram (Ctrl+N)">New</button>
-        <button type="button" id="btn-open" title="Open file (Ctrl+O)">Open</button>
-        <button type="button" id="btn-save" title="Save (Ctrl+S)">Save</button>
-        <button type="button" id="btn-save-as" title="Save as (Ctrl+Shift+S)">Save As</button>
+        <button type="button" id="btn-new" data-i18n="toolbar.new" data-i18n-title="toolbar.new.title">New</button>
+        <button type="button" id="btn-open" data-i18n="toolbar.open" data-i18n-title="toolbar.open.title">Open</button>
+        <button type="button" id="btn-save" data-i18n="toolbar.save" data-i18n-title="toolbar.save.title">Save</button>
+        <button type="button" id="btn-save-as" data-i18n="toolbar.saveAs" data-i18n-title="toolbar.saveAs.title">Save As</button>
         <div class="dropdown">
-          <button type="button" id="btn-export" title="Export diagram">Export ▾</button>
+          <button type="button" id="btn-export" data-i18n="toolbar.export" data-i18n-title="toolbar.export.title">Export ▾</button>
           <div class="dropdown-menu" id="export-menu"></div>
         </div>
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <label class="toolbar-field toolbar-toggle" data-i18n-title="toolbar.sketchy.title">
+          <span data-i18n="toolbar.sketchy">Sketchy</span>
+          <span class="toggle-switch">
+            <input type="checkbox" id="sketchy-mode" role="switch" data-i18n-aria="toolbar.sketchy.aria" aria-label="Sketchy diagram style" />
+            <span class="toggle-track" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label class="toolbar-field" data-i18n-title="toolbar.language.title">
+          <span data-i18n="toolbar.language">Language</span>
+          <select id="locale-select" data-i18n-aria="toolbar.language.aria" aria-label="Diagram editor language"></select>
+        </label>
       </div>
       <div class="toolbar-group">
         <button
           type="button"
           id="btn-export-simulation"
           class="primary"
-          title="Export token simulation as WebM video"
+          data-i18n="toolbar.exportAnimation"
+          data-i18n-title="toolbar.exportAnimation.title"
         >
           Export Animation
         </button>
         <div id="simulation-controls" class="simulation-controls">
           <label class="toolbar-field">
-            <span>Start</span>
-            <select id="simulation-start-mode" title="How simulation starts when entering token simulation mode">
-              <option value="interactive">Interactive</option>
-              <option value="auto" selected>Auto-start</option>
+            <span data-i18n="toolbar.simulation.start">Start</span>
+            <select id="simulation-start-mode" data-i18n-title="toolbar.simulation.start.title" title="How simulation starts when entering token simulation mode">
+              <option value="interactive" data-i18n="toolbar.simulation.interactive">Interactive</option>
+              <option value="auto" selected data-i18n="toolbar.simulation.auto">Auto-start</option>
             </select>
           </label>
           <label class="toolbar-field toolbar-field-checkbox">
-            <input type="checkbox" id="simulation-step-mode" title="Pause at each activity until you continue manually" />
-            <span>Step mode</span>
+            <input type="checkbox" id="simulation-step-mode" data-i18n-title="toolbar.simulation.stepMode.title" title="Pause at each activity until you continue manually" />
+            <span data-i18n="toolbar.simulation.stepMode">Step mode</span>
           </label>
         </div>
       </div>
       <div class="toolbar-group toolbar-status">
-        <button type="button" id="btn-shortcuts" title="Горячие клавиши">?</button>
+        <button type="button" id="btn-shortcuts" data-i18n-title="toolbar.shortcuts.title" title="Горячие клавиши">?</button>
         <span id="file-name">Untitled</span>
         <span id="dirty-indicator" hidden>•</span>
       </div>
@@ -50,43 +69,43 @@
 
     <div id="drop-overlay" class="drop-overlay">
       <div class="drop-overlay-box">
-        <span>Drop BPMN file to open</span>
+        <span data-i18n="drop.overlay">Drop BPMN file to open</span>
       </div>
     </div>
 
     <dialog id="recording-dialog" class="recording-dialog">
       <form method="dialog" class="recording-dialog-content">
-        <h2>Export simulation animation</h2>
+        <h2 data-i18n="recording.title">Export simulation animation</h2>
         <p id="recording-mode-description">
           Simulation starts automatically from the beginning. Recording stops when all tokens finish.
         </p>
         <label class="recording-field">
-          <span>Recording mode</span>
+          <span data-i18n="recording.mode">Recording mode</span>
           <select id="recording-mode">
-            <option value="auto">Automatic — full run from start</option>
-            <option value="interactive">Interactive — you control the simulation</option>
+            <option value="auto" data-i18n="recording.mode.auto">Automatic — full run from start</option>
+            <option value="interactive" data-i18n="recording.mode.interactive">Interactive — you control the simulation</option>
           </select>
         </label>
         <label class="recording-field">
-          <span>Recording area</span>
+          <span data-i18n="recording.area">Recording area</span>
           <select id="recording-crop-mode">
-            <option value="diagram">Entire diagram</option>
-            <option value="viewport">Current view</option>
-            <option value="tight">Tight crop</option>
-            <option value="custom">Custom padding</option>
-            <option value="manual">Draw with mouse</option>
+            <option value="diagram" data-i18n="recording.area.diagram">Entire diagram</option>
+            <option value="viewport" data-i18n="recording.area.viewport">Current view</option>
+            <option value="tight" data-i18n="recording.area.tight">Tight crop</option>
+            <option value="custom" data-i18n="recording.area.custom">Custom padding</option>
+            <option value="manual" data-i18n="recording.area.manual">Draw with mouse</option>
           </select>
         </label>
-        <p id="recording-crop-hint" class="recording-crop-hint" hidden>
+        <p id="recording-crop-hint" class="recording-crop-hint" hidden data-i18n="recording.cropHint">
           After clicking Start export, drag on the diagram to select the recording area.
         </p>
         <label class="recording-field" id="recording-crop-padding-field" hidden>
-          <span>Padding (px)</span>
+          <span data-i18n="recording.padding">Padding (px)</span>
           <input id="recording-crop-padding" type="number" min="0" max="500" value="48" />
         </label>
         <div class="recording-actions">
-          <button type="button" id="recording-cancel">Cancel</button>
-          <button type="button" id="recording-start" class="primary">Start export</button>
+          <button type="button" id="recording-cancel" data-i18n="recording.cancel">Cancel</button>
+          <button type="button" id="recording-start" class="primary" data-i18n="recording.start">Start export</button>
         </div>
       </form>
     </dialog>
@@ -94,10 +113,10 @@
     <dialog id="shortcuts-dialog" class="shortcuts-dialog">
       <form method="dialog" class="shortcuts-dialog-content">
         <header class="shortcuts-dialog-header">
-          <h2>Горячие клавиши</h2>
-          <button type="button" id="shortcuts-close" aria-label="Close">×</button>
+          <h2 data-i18n="shortcuts.title">Горячие клавиши</h2>
+          <button type="button" id="shortcuts-close" data-i18n-aria="toolbar.shortcuts.close" aria-label="Close">×</button>
         </header>
-        <p class="shortcuts-note">
+        <p class="shortcuts-note" data-i18n="shortcuts.note">
           Сочетания работают по физическим клавишам и в русской раскладке. В скобках — буквы на ЙЦУКЕН.
         </p>
         <div id="shortcuts-content"></div>
@@ -110,8 +129,8 @@
         <progress id="recording-progress-bar" max="100" value="0"></progress>
         <p id="recording-progress-label">Recording simulation... 0%</p>
         <div class="recording-overlay-actions">
-          <button type="button" id="recording-progress-stop" class="primary" hidden>Stop recording</button>
-          <button type="button" id="recording-progress-cancel">Cancel</button>
+          <button type="button" id="recording-progress-stop" class="primary" hidden data-i18n="recording.progress.stop">Stop recording</button>
+          <button type="button" id="recording-progress-cancel" data-i18n="recording.cancel">Cancel</button>
         </div>
       </div>
     </div>

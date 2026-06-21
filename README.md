@@ -10,6 +10,8 @@
 - **Мини-карта** — обзор всей диаграммы и быстрая навигация по холсту
 - **Раскраска элементов** — выбор цвета заливки и обводки через context pad
 - **Create/Append anything** — быстрое создание и добавление любых BPMN-элементов через поиск
+- **Sketchy-стиль** — опциональный «нарисованный от руки» вид (переключатель **Sketchy** на панели; канва пересоздаётся без перезагрузки приложения)
+- **Локализация редактора (bpmn-js-i18n)** — перевод палитры, context pad, подсказок и сообщений bpmn-js; выбор языка на панели (**Language**)
 - **Симуляция токена** — анимация движения токена по процессу
 - Открытие, сохранение и экспорт диаграмм
 - Открытие файлов через диалог, перетаскивание в окно или двойной клик по `.bpmn`
@@ -108,6 +110,27 @@ Pause, reset, log и скорость — через встроенную пал
 
 На палитре слева и в context pad выделенного элемента есть пункт **…** — через него можно найти и создать или добавить любой BPMN-элемент. Горячие клавиши: `N` / `Т` (создать) и `A` / `Ф` (добавить после выделенного элемента).
 
+## Локализация (bpmn-js-i18n)
+
+Интерфейс редактора на холсте (палитра, context pad, replace menu, подсказки, сообщения импорта) переводится через [bpmn-js-i18n](https://github.com/bpmn-io/bpmn-js-i18n).
+
+1. На панели инструментов выберите язык в списке **Language** — **English** или **Русский**.
+2. Выбор сохраняется в `localStorage` и применяется при следующем запуске.
+3. По умолчанию используется **русский**; если язык браузера есть в списке — он подставляется автоматически.
+
+**Что переводится на русский:**
+
+| Область | Источник |
+|---------|----------|
+| Панель инструментов, диалоги, экспорт | `src/app-ui-i18n.js` |
+| Меню Electron, системные диалоги | `electron/menu-i18n.js` |
+| Холст (палитра, context pad, подсказки) | `bpmn-js-i18n` + `src/i18n-overrides.js` |
+| Панель свойств | `src/properties-panel-ru.js` |
+| Сообщения об ошибках экспорта/записи | `src/user-messages.js` |
+| Справка по горячим клавишам | `src/app-ui-i18n.js` (ключи `shortcuts.*`) |
+
+Переводы расширений и панели свойств дополняются в `src/i18n-overrides.js` и `scripts/generate-properties-panel-ru.mjs` (результат — `src/properties-panel-ru.js`). Сообщения правил **bpmnlint** при наведении на значки ошибок пока на английском (они задаются пресетом bpmnlint, не через translate).
+
 ## Валидация BPMN (bpmnlint)
 
 Редактор проверяет диаграмму по набору правил [bpmnlint](https://github.com/bpmn-io/bpmnlint) через интеграцию [bpmn-js-bpmnlint](https://github.com/bpmn-io/bpmn-js-bpmnlint).
@@ -152,6 +175,8 @@ Pause, reset, log и скорость — через встроенную пал
 - [diagram-js-minimap](https://github.com/bpmn-io/diagram-js-minimap) — мини-карта диаграммы
 - [bpmn-js-color-picker](https://github.com/bpmn-io/bpmn-js-color-picker) — раскраска элементов
 - [bpmn-js-create-append-anything](https://github.com/bpmn-io/bpmn-js-create-append-anything) — create/append anything
+- [bpmn-js-sketchy](https://github.com/bpmn-io/bpmn-js-sketchy) — sketchy-рендерер
+- [bpmn-js-i18n](https://github.com/bpmn-io/bpmn-js-i18n) — переводы интерфейса bpmn-js
 - [bpmnlint](https://github.com/bpmn-io/bpmnlint) + [bpmn-js-bpmnlint](https://github.com/bpmn-io/bpmn-js-bpmnlint) — валидация диаграмм
 - [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation) — анимация токена
 - [bpmn-js-properties-panel](https://github.com/bpmn-io/bpmn-js-properties-panel) — панель свойств

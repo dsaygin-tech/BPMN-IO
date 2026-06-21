@@ -1,47 +1,7 @@
-const SHORTCUT_SECTIONS = [
-  {
-    title: 'Файлы',
-    items: [
-      { action: 'Новая диаграмма', keys: 'Ctrl/Cmd + N' },
-      { action: 'Открыть', keys: 'Ctrl/Cmd + O' },
-      { action: 'Сохранить', keys: 'Ctrl/Cmd + S' },
-      { action: 'Сохранить как', keys: 'Ctrl/Cmd + Shift + S' }
-    ]
-  },
-  {
-    title: 'Моделирование',
-    items: [
-      { action: 'Создать элемент (поиск)', keys: 'N / Т' },
-      { action: 'Добавить элемент (поиск)', keys: 'A / Ф' },
-      { action: 'Отменить', keys: 'Ctrl/Cmd + Z / Я' },
-      { action: 'Повторить', keys: 'Ctrl/Cmd + Y / Н' },
-      { action: 'Копировать', keys: 'Ctrl/Cmd + C / С' },
-      { action: 'Вставить', keys: 'Ctrl/Cmd + V / М' },
-      { action: 'Вырезать', keys: 'Ctrl/Cmd + X / Ч' },
-      { action: 'Дублировать', keys: 'Ctrl/Cmd + D / В' },
-      { action: 'Выделить всё', keys: 'Ctrl/Cmd + A' },
-      { action: 'Поиск', keys: 'Ctrl/Cmd + F / А' },
-      { action: 'Рука (pan)', keys: 'H / Р' },
-      { action: 'Lasso', keys: 'L / Д' },
-      { action: 'Space tool', keys: 'S / Ы' },
-      { action: 'Connect', keys: 'C / С' },
-      { action: 'Редактировать подпись', keys: 'E / У' },
-      { action: 'Заменить элемент', keys: 'R / К' }
-    ]
-  },
-  {
-    title: 'Симуляция токена',
-    items: [
-      { action: 'Включить / выключить', keys: 'Ctrl/Cmd + Shift + T / Е' },
-      { action: 'Переключить (на холсте)', keys: 'T / Е' },
-      { action: 'Пауза / продолжение', keys: 'Space' },
-      { action: 'Сброс', keys: 'R / К' },
-      { action: 'Журнал', keys: 'L / Д' }
-    ]
-  }
-];
+import { SHORTCUT_SECTIONS, t } from './app-ui-i18n.js';
+import { getLocale } from './i18n.js';
 
-function renderShortcutSections(container) {
+function renderShortcutSections(container, locale = getLocale()) {
   container.replaceChildren();
 
   for (const section of SHORTCUT_SECTIONS) {
@@ -49,18 +9,18 @@ function renderShortcutSections(container) {
     sectionEl.className = 'shortcuts-section';
 
     const title = document.createElement('h3');
-    title.textContent = section.title;
+    title.textContent = t(section.titleKey, locale);
     sectionEl.appendChild(title);
 
     const list = document.createElement('dl');
     list.className = 'shortcuts-list';
 
-    for (const { action, keys } of section.items) {
+    for (const { actionKey, keys } of section.items) {
       const row = document.createElement('div');
       row.className = 'shortcuts-row';
 
       const dt = document.createElement('dt');
-      dt.textContent = action;
+      dt.textContent = t(actionKey, locale);
 
       const dd = document.createElement('dd');
       dd.textContent = keys;
@@ -88,4 +48,10 @@ export function initKeyboardHelp({
   dialog.querySelector('#shortcuts-close')?.addEventListener('click', () => {
     dialog.close();
   });
+
+  return {
+    refresh(locale = getLocale()) {
+      renderShortcutSections(content, locale);
+    }
+  };
 }

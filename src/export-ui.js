@@ -1,4 +1,5 @@
 import { EXPORT_FORMATS } from './export.js';
+import { getExportLabel } from './app-ui-i18n.js';
 
 function bindExportItems(exportMenu, onExport) {
   exportMenu.querySelectorAll('[data-format]').forEach((item) => {
@@ -18,17 +19,17 @@ export function renderExportMenu({ onExport }) {
   const animationFormats = Object.values(EXPORT_FORMATS).filter((format) => format.isAnimated);
 
   let html = standardFormats.map((format) => (
-    `<button type="button" data-format="${format.id}">${format.label} (.${format.extension})</button>`
+    `<button type="button" data-format="${format.id}">${getExportLabel(format.id)} (.${format.extension})</button>`
   )).join('');
 
   html += '<div class="dropdown-divider"></div>';
   html += snapshotFormats.map((format) => (
-    `<button type="button" data-format="${format.id}" class="simulation-export">${format.label} (.${format.extension})</button>`
+    `<button type="button" data-format="${format.id}" class="simulation-export">${getExportLabel(format.id)} (.${format.extension})</button>`
   )).join('');
 
   html += '<div class="dropdown-divider"></div>';
   html += animationFormats.map((format) => (
-    `<button type="button" data-format="${format.id}" class="simulation-export">${format.label} (.${format.extension})</button>`
+    `<button type="button" data-format="${format.id}" class="simulation-export">${getExportLabel(format.id)} (.${format.extension})</button>`
   )).join('');
 
   exportMenu.innerHTML = html;

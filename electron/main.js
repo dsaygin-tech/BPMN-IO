@@ -2,22 +2,25 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { menuT } from './menu-i18n.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
 
-const EXPORT_FILTERS = {
-  bpmn: [
-    { name: 'BPMN diagrams', extensions: ['bpmn'] },
-    { name: 'XML files', extensions: ['xml'] }
-  ],
-  svg: [{ name: 'SVG images', extensions: ['svg'] }],
-  png: [{ name: 'PNG images', extensions: ['png'] }],
-  pdf: [{ name: 'PDF documents', extensions: ['pdf'] }],
-  json: [{ name: 'JSON files', extensions: ['json'] }],
-  gif: [{ name: 'GIF animations', extensions: ['gif'] }],
-  webm: [{ name: 'WebM videos', extensions: ['webm'] }]
-};
+function getExportFilters(locale) {
+  return {
+    bpmn: [
+      { name: menuT('bpmnDiagrams', locale), extensions: ['bpmn'] },
+      { name: menuT('xmlFiles', locale), extensions: ['xml'] }
+    ],
+    svg: [{ name: menuT('svgImages', locale), extensions: ['svg'] }],
+    png: [{ name: menuT('pngImages', locale), extensions: ['png'] }],
+    pdf: [{ name: menuT('pdfDocuments', locale), extensions: ['pdf'] }],
+    json: [{ name: menuT('jsonFilesFilter', locale), extensions: ['json'] }],
+    gif: [{ name: menuT('gifAnimations', locale), extensions: ['gif'] }],
+    webm: [{ name: menuT('webmVideos', locale), extensions: ['webm'] }]
+  };
+}
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
@@ -27,6 +30,8 @@ let currentFilePath = null;
 
 /** @type {string | null} */
 let pendingOpenFilePath = null;
+
+let appLocale = 'ru';
 
 function getIndexPath() {
   if (isDev) {
@@ -78,7 +83,7 @@ function sendToRenderer(channel, payload) {
 }
 
 function updateWindowTitle(filePath) {
-  const name = filePath ? filePath.split(/[/\\]/).pop() : 'Untitled';
+  const name = filePath ? filePath.split(/[/\\]/).pop() : menuT('untitled', appLocale);
   mainWindow?.setTitle(`${name} — BPMN-IO`);
 }
 
@@ -96,16 +101,19 @@ async function openFileByPath(filePath) {
     const file = await readFileByPath(filePath);
     sendToRenderer('menu:open', file);
   } catch (error) {
-    dialog.showErrorBox('Open failed', `Could not open file:\n${error.message}`);
+    dialog.showErrorBox(
+      menuT('openFailedTitle', appLocale),
+      menuT('openFailedMessage', appLocale, { message: error.message })
+    );
   }
 }
 
 async function openFileDialog() {
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Open BPMN diagram',
+    title: menuT('openDialogTitle', appLocale),
     filters: [
-      { name: 'BPMN diagrams', extensions: ['bpmn', 'xml'] },
-      { name: 'All files', extensions: ['*'] }
+      { name: menuT('bpmnDiagrams', appLocale), extensions: ['bpmn', 'xml'] },
+      { name: menuT('allFiles', appLocale), extensions: ['*'] }
     ],
     properties: ['openFile']
   });
@@ -119,12 +127,13 @@ async function openFileDialog() {
 
 async function saveFileDialog(xml, filePath = null) {
   let targetPath = filePath;
+  const exportFilters = getExportFilters(appLocale);
 
   if (!targetPath) {
     const result = await dialog.showSaveDialog(mainWindow, {
-      title: 'Save BPMN diagram',
+      title: menuT('saveDialogTitle', appLocale),
       defaultPath: 'diagram.bpmn',
-      filters: EXPORT_FILTERS.bpmn
+      filters: exportFilters.bpmn
     });
 
     if (result.canceled || !result.filePath) {
@@ -143,10 +152,11 @@ async function saveFileDialog(xml, filePath = null) {
 }
 
 async function exportFileDialog({ content, defaultPath, format, encoding }) {
+  const exportFilters = getExportFilters(appLocale);
   const result = await dialog.showSaveDialog(mainWindow, {
-    title: 'Export diagram',
+    title: menuT('exportDialogTitle', appLocale),
     defaultPath,
-    filters: EXPORT_FILTERS[format] || [{ name: 'All files', extensions: ['*'] }]
+    filters: exportFilters[format] || [{ name: menuT('allFiles', appLocale), extensions: ['*'] }]
   });
 
   if (result.canceled || !result.filePath) {
@@ -167,17 +177,17 @@ async function exportFileDialog({ content, defaultPath, format, encoding }) {
   return { filePath: result.filePath };
 }
 
-function buildMenu() {
+function buildMenu(locale = appLocale) {
   const template = [
     {
-      label: 'File',
+      label: menuT('file', locale),
       submenu: [
         {
-          label: 'New',
+          label: menuT('new', locale),
           click: () => sendToRenderer('menu:new')
         },
         {
-          label: 'Open…',
+          label: menuT('open', locale),
           click: async () => {
             const file = await openFileDialog();
 
@@ -188,44 +198,44 @@ function buildMenu() {
         },
         { type: 'separator' },
         {
-          label: 'Save',
+          label: menuT('save', locale),
           click: () => sendToRenderer('menu:save', { filePath: currentFilePath })
         },
         {
-          label: 'Save As…',
+          label: menuT('saveAs', locale),
           click: () => sendToRenderer('menu:save-as')
         },
         { type: 'separator' },
         {
-          label: 'Export',
+          label: menuT('export', locale),
           submenu: [
             {
-              label: 'BPMN (.bpmn)…',
+              label: menuT('exportBpmn', locale),
               click: () => sendToRenderer('menu:export', { format: 'bpmn' })
             },
             {
-              label: 'SVG (.svg)…',
+              label: menuT('exportSvg', locale),
               click: () => sendToRenderer('menu:export', { format: 'svg' })
             },
             {
-              label: 'PNG (.png)…',
+              label: menuT('exportPng', locale),
               click: () => sendToRenderer('menu:export', { format: 'png' })
             },
             {
-              label: 'PDF (.pdf)…',
+              label: menuT('exportPdf', locale),
               click: () => sendToRenderer('menu:export', { format: 'pdf' })
             },
             {
-              label: 'JSON (.json)…',
+              label: menuT('exportJson', locale),
               click: () => sendToRenderer('menu:export', { format: 'json' })
             },
             { type: 'separator' },
             {
-              label: 'Simulation PNG (.png)…',
+              label: menuT('exportSimulationPng', locale),
               click: () => sendToRenderer('menu:export', { format: 'simulation-png' })
             },
             {
-              label: 'Simulation WebM (.webm)…',
+              label: menuT('exportSimulationWebm', locale),
               click: () => sendToRenderer('menu:export', { format: 'simulation-webm' })
             }
           ]
@@ -235,36 +245,36 @@ function buildMenu() {
       ]
     },
     {
-      label: 'Simulation',
+      label: menuT('simulation', locale),
       submenu: [
         {
-          label: 'Toggle Token Simulation',
+          label: menuT('toggleSimulation', locale),
           click: () => sendToRenderer('menu:toggle-simulation')
         },
         { type: 'separator' },
         {
-          label: 'Pause / Resume',
+          label: menuT('pauseResume', locale),
           click: () => sendToRenderer('menu:simulation-pause')
         },
         {
-          label: 'Reset Simulation',
+          label: menuT('resetSimulation', locale),
           click: () => sendToRenderer('menu:simulation-reset')
         },
         {
-          label: 'Toggle Simulation Log',
+          label: menuT('toggleLog', locale),
           click: () => sendToRenderer('menu:simulation-log')
         },
         { type: 'separator' },
         {
-          label: 'Start Mode',
+          label: menuT('startMode', locale),
           submenu: [
             {
-              label: 'Interactive',
+              label: menuT('interactive', locale),
               type: 'radio',
               click: () => sendToRenderer('menu:simulation-start-mode', { mode: 'interactive' })
             },
             {
-              label: 'Auto-start',
+              label: menuT('autoStart', locale),
               type: 'radio',
               checked: true,
               click: () => sendToRenderer('menu:simulation-start-mode', { mode: 'auto' })
@@ -272,14 +282,14 @@ function buildMenu() {
           ]
         },
         {
-          label: 'Step Mode',
+          label: menuT('stepMode', locale),
           type: 'checkbox',
           click: (menuItem) => sendToRenderer('menu:simulation-step-mode', { enabled: menuItem.checked })
         }
       ]
     },
     {
-      label: 'View',
+      label: menuT('view', locale),
       submenu: [
         { role: 'reload' },
         { role: 'toggleDevTools' },
@@ -290,14 +300,14 @@ function buildMenu() {
       ]
     },
     {
-      label: 'Help',
+      label: menuT('help', locale),
       submenu: [
         {
           label: 'bpmn.io',
           click: () => shell.openExternal('https://bpmn.io')
         },
         {
-          label: 'Token Simulation Demo',
+          label: menuT('tokenSimulationDemo', locale),
           click: () => shell.openExternal('https://bpmn-io.github.io/bpmn-js-token-simulation/modeler.html')
         }
       ]
@@ -366,6 +376,16 @@ ipcMain.handle('file:get-current-path', () => currentFilePath);
 ipcMain.on('file:path-changed', (_event, filePath) => {
   currentFilePath = filePath;
   updateWindowTitle(filePath);
+});
+
+ipcMain.on('app:set-locale', (_event, locale) => {
+  if (!locale || locale === appLocale) {
+    return;
+  }
+
+  appLocale = locale;
+  buildMenu(locale);
+  updateWindowTitle(currentFilePath);
 });
 
 if (process.platform === 'darwin') {
