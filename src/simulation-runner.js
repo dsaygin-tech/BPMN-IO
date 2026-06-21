@@ -13,21 +13,22 @@ const BPMN_CONTAINER_TYPES = new Set([
   'bpmn:Lane'
 ]);
 
-export async function prepareAutoSimulation(modeler) {
-  const toggleMode = modeler.get('toggleMode');
+const BPMN_ACTIVITY_TYPES = new Set([
+  'bpmn:Task',
+  'bpmn:UserTask',
+  'bpmn:ServiceTask',
+  'bpmn:ScriptTask',
+  'bpmn:BusinessRuleTask',
+  'bpmn:ManualTask',
+  'bpmn:SendTask',
+  'bpmn:ReceiveTask',
+  'bpmn:CallActivity',
+  'bpmn:SubProcess'
+]);
 
-  if (!toggleMode._active) {
-    toggleMode.toggleMode(true);
-    await sleep(100);
-  }
-
-  const simulator = modeler.get('simulator');
+export function configureGatewayDefaults(modeler) {
   const exclusiveGatewaySettings = modeler.get('exclusiveGatewaySettings');
   const inclusiveGatewaySettings = modeler.get('inclusiveGatewaySettings');
-  const elementRegistry = modeler.get('elementRegistry');
-
-  simulator.reset();
-  clearPausePoints(modeler);
 
   if (exclusiveGatewaySettings?.setSequenceFlowsDefault) {
     exclusiveGatewaySettings.setSequenceFlowsDefault();
@@ -36,18 +37,44 @@ export async function prepareAutoSimulation(modeler) {
   if (inclusiveGatewaySettings?.setDefaults) {
     inclusiveGatewaySettings.setDefaults();
   }
-
-  triggerStartEvents(modeler);
-  modeler.get('eventBus').fire('tokenSimulation.playSimulation');
-  await waitNextFrame();
-
-  return {
-    elementRegistry,
-    simulator
-  };
 }
 
-export async function prepareInteractiveSimulation(modeler) {
+export function resetSimulationState(modeler) {
+  modeler.get('simulator').reset();
+  clearPausePoints(modeler);
+  configureGatewayDefaults(modeler);
+}
+
+export function triggerStartEvents(modeler) {
+  const simulator = modeler.get('simulator');
+  const elementRegistry = modeler.get('elementRegistry');
+  const startEvents = elementRegistry.filter(({ type }) => type === 'bpmn:StartEvent');
+
+  for (const startEvent of startEvents) {
+    const subscriptions = simulator.findSubscriptions({ element: startEvent });
+
+    for (const subscription of subscriptions) {
+      simulator.trigger({
+        event: subscription.event,
+        scope: subscription.scope
+      });
+    }
+  }
+}
+
+export function setStepMode(modeler, enabled) {
+  const simulator = modeler.get('simulator');
+
+  modeler.get('elementRegistry').forEach((element) => {
+    if (!BPMN_ACTIVITY_TYPES.has(element.type)) {
+      return;
+    }
+
+    simulator.waitAtElement(element, enabled);
+  });
+}
+
+export async function enterSimulation(modeler, { startMode = 'auto', stepMode = false } = {}) {
   const toggleMode = modeler.get('toggleMode');
 
   if (!toggleMode._active) {
@@ -55,10 +82,59 @@ export async function prepareInteractiveSimulation(modeler) {
     await sleep(100);
   }
 
+  resetSimulationState(modeler);
+
+  if (stepMode) {
+    setStepMode(modeler, true);
+  }
+
+  if (startMode === 'auto') {
+    await applyAutoStart(modeler);
+  }
+
   return {
     elementRegistry: modeler.get('elementRegistry'),
     simulator: modeler.get('simulator')
   };
+}
+
+export async function applyAutoStart(modeler) {
+  triggerStartEvents(modeler);
+  modeler.get('eventBus').fire('tokenSimulation.playSimulation');
+  await waitNextFrame();
+}
+
+export async function afterLibraryReset(modeler, { startMode = 'auto', stepMode = false } = {}) {
+  clearPausePoints(modeler);
+  configureGatewayDefaults(modeler);
+
+  if (stepMode) {
+    setStepMode(modeler, true);
+  }
+
+  if (startMode === 'auto') {
+    await applyAutoStart(modeler);
+  }
+}
+
+export async function restartSimulation(modeler, { startMode = 'auto', stepMode = false } = {}) {
+  resetSimulationState(modeler);
+
+  if (stepMode) {
+    setStepMode(modeler, true);
+  }
+
+  if (startMode === 'auto') {
+    await applyAutoStart(modeler);
+  }
+}
+
+export async function prepareAutoSimulation(modeler) {
+  return enterSimulation(modeler, { startMode: 'auto', stepMode: false });
+}
+
+export async function prepareInteractiveSimulation(modeler) {
+  return enterSimulation(modeler, { startMode: 'interactive', stepMode: false });
 }
 
 export async function waitForSimulationStart(modeler, signal) {
@@ -85,23 +161,6 @@ function clearPausePoints(modeler) {
   modeler.get('elementRegistry').forEach((element) => {
     simulator.waitAtElement(element, false);
   });
-}
-
-function triggerStartEvents(modeler) {
-  const simulator = modeler.get('simulator');
-  const elementRegistry = modeler.get('elementRegistry');
-  const startEvents = elementRegistry.filter(({ type }) => type === 'bpmn:StartEvent');
-
-  for (const startEvent of startEvents) {
-    const subscriptions = simulator.findSubscriptions({ element: startEvent });
-
-    for (const subscription of subscriptions) {
-      simulator.trigger({
-        event: subscription.event,
-        scope: subscription.scope
-      });
-    }
-  }
 }
 
 export function getEndEvents(modeler) {

@@ -44,6 +44,52 @@ body {
   font-size: 12px;
 }
 
+.toolbar-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 12px;
+}
+
+.toolbar-field select {
+  padding: 5px 8px;
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.toolbar-field-checkbox {
+  cursor: pointer;
+  user-select: none;
+}
+
+.toolbar-field-checkbox input {
+  margin: 0;
+}
+
+.simulation-controls {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid #d9d9d9;
+}
+
+body.token-simulation-active .simulation-controls {
+  display: inline-flex;
+}
+
+body.token-simulation-active .bts-toggle-mode {
+  display: none;
+}
+
+body.token-simulation-active .simulation-parent.paused .bts-animation-tokens .bts-token {
+  animation-play-state: paused;
+}
+
 #dirty-indicator {
   color: #10d070;
   font-size: 20px;

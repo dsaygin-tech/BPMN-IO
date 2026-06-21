@@ -30,6 +30,19 @@
         >
           Export Animation
         </button>
+        <div id="simulation-controls" class="simulation-controls">
+          <label class="toolbar-field">
+            <span>Start</span>
+            <select id="simulation-start-mode" title="How simulation starts when entering token simulation mode">
+              <option value="interactive">Interactive</option>
+              <option value="auto" selected>Auto-start</option>
+            </select>
+          </label>
+          <label class="toolbar-field toolbar-field-checkbox">
+            <input type="checkbox" id="simulation-step-mode" title="Pause at each activity until you continue manually" />
+            <span>Step mode</span>
+          </label>
+        </div>
       </div>
       <div class="toolbar-group toolbar-status">
         <span id="file-name">Untitled</span>

@@ -1,5 +1,6 @@
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import TokenSimulationModule from 'bpmn-js-token-simulation';
+import SimulationSupportModule from 'bpmn-js-token-simulation/lib/simulation-support';
 import {
   BpmnPropertiesPanelModule,
   BpmnPropertiesProviderModule
@@ -25,6 +26,7 @@ import {
   initFileDrop,
   initFileInput
 } from './file-open.js';
+import { initSimulationUi } from './simulation-ui.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
@@ -36,6 +38,7 @@ let currentFilePath = null;
 let isDirty = false;
 let refreshExportMenu = null;
 let exportSimulationButton = null;
+let simulationUi = null;
 
 const DesktopModule = {
   __init__: [
@@ -64,6 +67,7 @@ const modeler = new BpmnModeler({
     BpmnPropertiesPanelModule,
     BpmnPropertiesProviderModule,
     TokenSimulationModule,
+    SimulationSupportModule,
     DesktopModule
   ],
   propertiesPanel: {
@@ -240,8 +244,21 @@ async function exportDiagramToFormat(format, filePath = null) {
 
 function toggleSimulation() {
   const toggleMode = modeler.get('toggleMode');
+  const wasActive = toggleMode._active;
+
   toggleMode.toggleMode();
+
+  if (!wasActive) {
+    simulationUi?.enter();
+  }
 }
+
+simulationUi = initSimulationUi({
+  modeler,
+  onSimulationActiveChange: () => {
+    refreshExportMenu?.();
+  }
+});
 
 modeler.on('commandStack.changed', () => {
   setDirty(true);
@@ -284,6 +301,11 @@ if (window.electronAPI) {
   window.electronAPI.onMenu('menu:save-as', () => saveDiagram());
   window.electronAPI.onMenu('menu:export', ({ format }) => exportDiagramToFormat(format));
   window.electronAPI.onMenu('menu:toggle-simulation', toggleSimulation);
+  window.electronAPI.onMenu('menu:simulation-pause', () => simulationUi?.triggerPause());
+  window.electronAPI.onMenu('menu:simulation-reset', () => simulationUi?.triggerReset());
+  window.electronAPI.onMenu('menu:simulation-log', () => simulationUi?.triggerLog());
+  window.electronAPI.onMenu('menu:simulation-start-mode', ({ mode }) => simulationUi?.setStartMode(mode));
+  window.electronAPI.onMenu('menu:simulation-step-mode', ({ enabled }) => simulationUi?.setStepMode(enabled));
 
   window.electronAPI.getCurrentPath().then((path) => {
     if (path) {

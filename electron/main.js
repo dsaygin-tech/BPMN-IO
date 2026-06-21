@@ -253,6 +253,44 @@ function buildMenu() {
           label: 'Toggle Token Simulation',
           accelerator: 'CmdOrCtrl+Shift+T',
           click: () => sendToRenderer('menu:toggle-simulation')
+        },
+        { type: 'separator' },
+        {
+          label: 'Pause / Resume',
+          accelerator: 'Space',
+          click: () => sendToRenderer('menu:simulation-pause')
+        },
+        {
+          label: 'Reset Simulation',
+          accelerator: 'R',
+          click: () => sendToRenderer('menu:simulation-reset')
+        },
+        {
+          label: 'Toggle Simulation Log',
+          accelerator: 'L',
+          click: () => sendToRenderer('menu:simulation-log')
+        },
+        { type: 'separator' },
+        {
+          label: 'Start Mode',
+          submenu: [
+            {
+              label: 'Interactive',
+              type: 'radio',
+              click: () => sendToRenderer('menu:simulation-start-mode', { mode: 'interactive' })
+            },
+            {
+              label: 'Auto-start',
+              type: 'radio',
+              checked: true,
+              click: () => sendToRenderer('menu:simulation-start-mode', { mode: 'auto' })
+            }
+          ]
+        },
+        {
+          label: 'Step Mode',
+          type: 'checkbox',
+          click: (menuItem) => sendToRenderer('menu:simulation-step-mode', { enabled: menuItem.checked })
         }
       ]
     },
