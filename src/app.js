@@ -1,6 +1,7 @@
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import TokenSimulationModule from 'bpmn-js-token-simulation';
 import SimulationSupportModule from 'bpmn-js-token-simulation/lib/simulation-support';
+import lintModule from 'bpmn-js-bpmnlint';
 import {
   BpmnPropertiesPanelModule,
   BpmnPropertiesProviderModule
@@ -11,6 +12,9 @@ import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css';
+import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css';
+
+import bpmnlintConfig from './bpmnlint-config.js';
 
 import newDiagram from './resources/newDiagram.bpmn?raw';
 import { downloadExport, exportDiagram, exportSimulationAnimation, EXPORT_FORMATS, getDefaultExportName } from './export.js';
@@ -57,11 +61,15 @@ const DesktopModule = {
 
 const modeler = new BpmnModeler({
   container: '#canvas',
+  linting: {
+    bpmnlint: bpmnlintConfig
+  },
   additionalModules: [
     BpmnPropertiesPanelModule,
     BpmnPropertiesProviderModule,
     TokenSimulationModule,
     SimulationSupportModule,
+    lintModule,
     DesktopModule
   ],
   propertiesPanel: {

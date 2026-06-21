@@ -5,6 +5,7 @@
 ## Возможности
 
 - Редактирование диаграмм BPMN 2.0 (задачи, шлюзы, события, дорожки и др.)
+- **Валидация BPMN (bpmnlint)** — проверка диаграммы на типичные ошибки моделирования
 - **Симуляция токена** — анимация движения токена по процессу
 - Открытие, сохранение и экспорт диаграмм
 - Открытие файлов через диалог, перетаскивание в окно или двойной клик по `.bpmn`
@@ -95,6 +96,16 @@ Pause, reset, log и скорость — через встроенную пал
 
 Нажмите **Exit Simulation**, чтобы вернуться к редактированию.
 
+## Валидация BPMN (bpmnlint)
+
+Редактор проверяет диаграмму по набору правил [bpmnlint](https://github.com/bpmn-io/bpmnlint) через интеграцию [bpmn-js-bpmnlint](https://github.com/bpmn-io/bpmn-js-bpmnlint).
+
+1. На панели холста нажмите кнопку **Lint** (иконка галочки) — проверка включается и обновляется при каждом изменении.
+2. Элементы с проблемами помечаются значками **ошибки** (красный) или **предупреждения** (жёлтый); наведите курсор, чтобы увидеть описание.
+3. Повторное нажатие **Lint** отключает подсветку.
+
+По умолчанию используется пресет `bpmnlint:recommended` (файл `src/.bpmnlintrc`): отсутствие start/end event, изолированные элементы, пустые подписи, некорректные потоки и другие типичные ошибки. Правила и их уровень (`error` / `warn`) можно изменить в `.bpmnlintrc`, после чего выполните `npm run pack:bpmnlint` (скрипт также запускается автоматически перед `npm run dev` и `npm run build`).
+
 ## Экспорт
 
 Экспорт доступен через кнопку **Export** на панели инструментов или меню **File → Export**:
@@ -125,6 +136,7 @@ Pause, reset, log и скорость — через встроенную пал
 - [Electron](https://www.electronjs.org/) — десктопная оболочка
 - [Vite](https://vitejs.dev/) — сборщик
 - [bpmn-js](https://github.com/bpmn-io/bpmn-js) — BPMN-редактор
+- [bpmnlint](https://github.com/bpmn-io/bpmnlint) + [bpmn-js-bpmnlint](https://github.com/bpmn-io/bpmn-js-bpmnlint) — валидация диаграмм
 - [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation) — анимация токена
 - [bpmn-js-properties-panel](https://github.com/bpmn-io/bpmn-js-properties-panel) — панель свойств
 
