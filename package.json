@@ -48,6 +48,7 @@
     "bpmn-js-properties-panel": "^5.50.1",
     "bpmn-js-token-simulation": "^0.39.3",
     "bpmnlint": "^11.12.1",
+    "diagram-js-grid": "^2.0.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "svg2pdf.js": "^2.5.0"

@@ -2,6 +2,7 @@ import BpmnModeler from 'bpmn-js/lib/Modeler';
 import TokenSimulationModule from 'bpmn-js-token-simulation';
 import SimulationSupportModule from 'bpmn-js-token-simulation/lib/simulation-support';
 import lintModule from 'bpmn-js-bpmnlint';
+import gridModule from 'diagram-js-grid';
 import {
   BpmnPropertiesPanelModule,
   BpmnPropertiesProviderModule
@@ -48,11 +49,22 @@ const DesktopModule = {
     [
       'eventBus',
       'toggleMode',
-      function (eventBus, toggleMode) {
+      'grid',
+      function (eventBus, toggleMode, grid) {
+        let gridVisibleBeforeSimulation = null;
+
         eventBus.on('tokenSimulation.toggleMode', (event) => {
           document.body.classList.toggle('token-simulation-active', event.active);
           exportSimulationButton.hidden = !event.active;
           refreshExportMenu?.();
+
+          if (event.active) {
+            gridVisibleBeforeSimulation = grid.isVisible();
+            grid.toggle(false);
+          } else if (gridVisibleBeforeSimulation !== null) {
+            grid.toggle(gridVisibleBeforeSimulation);
+            gridVisibleBeforeSimulation = null;
+          }
         });
       }
     ]
@@ -70,6 +82,7 @@ const modeler = new BpmnModeler({
     TokenSimulationModule,
     SimulationSupportModule,
     lintModule,
+    gridModule,
     DesktopModule
   ],
   propertiesPanel: {

@@ -235,7 +235,23 @@ body.token-simulation-active .properties-panel .bio-properties-panel-checkbox {
 }
 
 body.token-simulation-active .bts-notifications {
-  bottom: 24px;
+  bottom: 72px;
+}
+
+body.token-simulation-active .bts-set-animation-speed {
+  left: 20px;
+  transform: none;
+}
+
+.bts-scopes .bts-scope {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  min-width: 25px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .drop-overlay {
@@ -326,6 +342,8 @@ body.token-simulation-active .bts-notifications {
 .bjs-container.export-capturing .bts-notifications,
 .bjs-container.export-capturing .bts-set-animation-speed,
 .bjs-container.export-capturing .bjs-breadcrumbs,
+.bjs-container.export-capturing .bjsl-button,
+.bjs-container.export-capturing .layer-djs-grid,
 .bjs-container.export-capturing .djs-overlay-bts-context-menu,
 .bjs-container.export-capturing .djs-overlay-bts-element-notification,
 .bjs-container.export-capturing .bts-context-pad,
