@@ -44,7 +44,7 @@ function createWindow() {
     minHeight: 600,
     title: 'BPMN-IO',
     webPreferences: {
-      preload: join(__dirname, 'preload.js'),
+      preload: join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -174,12 +174,10 @@ function buildMenu() {
       submenu: [
         {
           label: 'New',
-          accelerator: 'CmdOrCtrl+N',
           click: () => sendToRenderer('menu:new')
         },
         {
           label: 'Open…',
-          accelerator: 'CmdOrCtrl+O',
           click: async () => {
             const file = await openFileDialog();
 
@@ -191,12 +189,10 @@ function buildMenu() {
         { type: 'separator' },
         {
           label: 'Save',
-          accelerator: 'CmdOrCtrl+S',
           click: () => sendToRenderer('menu:save', { filePath: currentFilePath })
         },
         {
           label: 'Save As…',
-          accelerator: 'CmdOrCtrl+Shift+S',
           click: () => sendToRenderer('menu:save-as')
         },
         { type: 'separator' },
@@ -243,23 +239,19 @@ function buildMenu() {
       submenu: [
         {
           label: 'Toggle Token Simulation',
-          accelerator: 'CmdOrCtrl+Shift+T',
           click: () => sendToRenderer('menu:toggle-simulation')
         },
         { type: 'separator' },
         {
           label: 'Pause / Resume',
-          accelerator: 'Space',
           click: () => sendToRenderer('menu:simulation-pause')
         },
         {
           label: 'Reset Simulation',
-          accelerator: 'R',
           click: () => sendToRenderer('menu:simulation-reset')
         },
         {
           label: 'Toggle Simulation Log',
-          accelerator: 'L',
           click: () => sendToRenderer('menu:simulation-log')
         },
         { type: 'separator' },

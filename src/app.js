@@ -3,6 +3,7 @@ import TokenSimulationModule from 'bpmn-js-token-simulation';
 import SimulationSupportModule from 'bpmn-js-token-simulation/lib/simulation-support';
 import lintModule from 'bpmn-js-bpmnlint';
 import BpmnColorPickerModule from 'bpmn-js-color-picker';
+import { CreateAppendAnythingModule } from 'bpmn-js-create-append-anything';
 import gridModule from 'diagram-js-grid';
 import minimapModule from 'diagram-js-minimap';
 import defaultTranslate from 'diagram-js/lib/i18n/translate/translate.js';
@@ -37,6 +38,9 @@ import {
   initFileInput
 } from './file-open.js';
 import { initSimulationUi } from './simulation-ui.js';
+import { CyrillicKeyboardModule } from './keyboard-layout.js';
+import { initAppShortcuts } from './app-shortcuts.js';
+import { initKeyboardHelp } from './keyboard-help.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
@@ -99,9 +103,11 @@ const modeler = new BpmnModeler({
     SimulationSupportModule,
     lintModule,
     BpmnColorPickerModule,
+    CreateAppendAnythingModule,
     gridModule,
     minimapModule,
     CustomTranslateModule,
+    CyrillicKeyboardModule,
     DesktopModule
   ],
   propertiesPanel: {
@@ -285,6 +291,20 @@ simulationUi = initSimulationUi({
   onSimulationActiveChange: () => {
     refreshExportMenu?.();
   }
+});
+
+initAppShortcuts({
+  onNew: createNewDiagram,
+  onOpen: openFileFromDialog,
+  onSave: () => saveDiagram(currentFilePath),
+  onSaveAs: () => saveDiagram(),
+  onToggleSimulation: toggleSimulation
+});
+
+initKeyboardHelp({
+  button: document.querySelector('#btn-shortcuts'),
+  dialog: document.querySelector('#shortcuts-dialog'),
+  content: document.querySelector('#shortcuts-content')
 });
 
 modeler.on('commandStack.changed', () => {

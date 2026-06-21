@@ -42,6 +42,7 @@
         </div>
       </div>
       <div class="toolbar-group toolbar-status">
+        <button type="button" id="btn-shortcuts" title="Горячие клавиши">?</button>
         <span id="file-name">Untitled</span>
         <span id="dirty-indicator" hidden>•</span>
       </div>
@@ -87,6 +88,19 @@
           <button type="button" id="recording-cancel">Cancel</button>
           <button type="button" id="recording-start" class="primary">Start export</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="shortcuts-dialog" class="shortcuts-dialog">
+      <form method="dialog" class="shortcuts-dialog-content">
+        <header class="shortcuts-dialog-header">
+          <h2>Горячие клавиши</h2>
+          <button type="button" id="shortcuts-close" aria-label="Close">×</button>
+        </header>
+        <p class="shortcuts-note">
+          Сочетания работают по физическим клавишам и в русской раскладке. В скобках — буквы на ЙЦУКЕН.
+        </p>
+        <div id="shortcuts-content"></div>
       </form>
     </dialog>
 
