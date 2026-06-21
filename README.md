@@ -7,6 +7,7 @@
 - Редактирование диаграмм BPMN 2.0 (задачи, шлюзы, события, дорожки и др.)
 - **Валидация BPMN (bpmnlint)** — проверка диаграммы на типичные ошибки моделирования
 - **Сетка на холсте** — визуальная точечная сетка для выравнивания элементов
+- **Мини-карта** — обзор всей диаграммы и быстрая навигация по холсту
 - **Симуляция токена** — анимация движения токена по процессу
 - Открытие, сохранение и экспорт диаграмм
 - Открытие файлов через диалог, перетаскивание в окно или двойной клик по `.bpmn`
@@ -138,6 +139,7 @@ Pause, reset, log и скорость — через встроенную пал
 - [Vite](https://vitejs.dev/) — сборщик
 - [bpmn-js](https://github.com/bpmn-io/bpmn-js) — BPMN-редактор
 - [diagram-js-grid](https://github.com/bpmn-io/diagram-js-grid) — визуальная сетка на холсте
+- [diagram-js-minimap](https://github.com/bpmn-io/diagram-js-minimap) — мини-карта диаграммы
 - [bpmnlint](https://github.com/bpmn-io/bpmnlint) + [bpmn-js-bpmnlint](https://github.com/bpmn-io/bpmn-js-bpmnlint) — валидация диаграмм
 - [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation) — анимация токена
 - [bpmn-js-properties-panel](https://github.com/bpmn-io/bpmn-js-properties-panel) — панель свойств

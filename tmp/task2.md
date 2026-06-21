@@ -1,5 +1,5 @@
 Давай внедрим библиотеки:
-diagram-js-grid 
++ diagram-js-grid 
 diagram-js-minimap 
 bpmn-js-color-picker 
 bpmn-js-create-append-anything 
