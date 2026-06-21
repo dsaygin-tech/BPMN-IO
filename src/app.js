@@ -2,6 +2,7 @@ import BpmnModeler from 'bpmn-js/lib/Modeler';
 import TokenSimulationModule from 'bpmn-js-token-simulation';
 import SimulationSupportModule from 'bpmn-js-token-simulation/lib/simulation-support';
 import lintModule from 'bpmn-js-bpmnlint';
+import BpmnColorPickerModule from 'bpmn-js-color-picker';
 import gridModule from 'diagram-js-grid';
 import minimapModule from 'diagram-js-minimap';
 import defaultTranslate from 'diagram-js/lib/i18n/translate/translate.js';
@@ -17,6 +18,7 @@ import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css';
 import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css';
 import 'diagram-js-minimap/assets/diagram-js-minimap.css';
+import 'bpmn-js-color-picker/colors/color-picker.css';
 
 import bpmnlintConfig from './bpmnlint-config.js';
 
@@ -96,6 +98,7 @@ const modeler = new BpmnModeler({
     TokenSimulationModule,
     SimulationSupportModule,
     lintModule,
+    BpmnColorPickerModule,
     gridModule,
     minimapModule,
     CustomTranslateModule,

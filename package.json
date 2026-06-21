@@ -45,6 +45,7 @@
     "@bpmn-io/properties-panel": "^3.34.0",
     "bpmn-js": "^18.11.0",
     "bpmn-js-bpmnlint": "^0.24.0",
+    "bpmn-js-color-picker": "^0.7.2",
     "bpmn-js-properties-panel": "^5.50.1",
     "bpmn-js-token-simulation": "^0.39.3",
     "bpmnlint": "^11.12.1",
