@@ -54,25 +54,6 @@ export const EXPORT_FORMATS = {
     requiresSimulation: true,
     nameSuffix: '-simulation'
   },
-  'simulation-pdf': {
-    id: 'simulation-pdf',
-    label: 'Simulation PDF',
-    extension: 'pdf',
-    mimeType: 'application/pdf',
-    encoding: 'binary',
-    requiresSimulation: true,
-    nameSuffix: '-simulation'
-  },
-  'simulation-gif': {
-    id: 'simulation-gif',
-    label: 'Simulation GIF',
-    extension: 'gif',
-    mimeType: 'image/gif',
-    encoding: 'binary',
-    requiresSimulation: true,
-    isAnimated: true,
-    nameSuffix: '-simulation'
-  },
   'simulation-webm': {
     id: 'simulation-webm',
     label: 'Simulation WebM',
@@ -300,19 +281,6 @@ async function svgToPdf(svg) {
   return pdf.output('arraybuffer');
 }
 
-async function canvasToPdf(canvas) {
-  const imageData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF({
-    orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-    unit: 'px',
-    format: [canvas.width, canvas.height],
-    hotfixes: ['px_scaling']
-  });
-
-  pdf.addImage(imageData, 'PNG', 0, 0, canvas.width, canvas.height);
-  return pdf.output('arraybuffer');
-}
-
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -372,12 +340,6 @@ export async function exportDiagram(modeler, format) {
       }, 'image/png');
     });
     const content = await blobToBase64(pngBlob);
-    return { content, ...config };
-  }
-
-  if (format === 'simulation-pdf') {
-    const snapshot = await captureSimulationSnapshot(modeler);
-    const content = arrayBufferToBase64(await canvasToPdf(snapshot));
     return { content, ...config };
   }
 

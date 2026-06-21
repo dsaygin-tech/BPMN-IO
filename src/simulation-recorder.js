@@ -1,4 +1,3 @@
-import { GIFEncoder, applyPalette, quantize } from 'gifenc';
 import {
   beginCaptureSession,
   captureSessionFrame,
@@ -39,37 +38,6 @@ function drawFrame(context, frame, width, height) {
   if (frame) {
     context.drawImage(frame, 0, 0, frame.width, frame.height, 0, 0, width, height);
   }
-}
-
-function createGifEncoder(width, height) {
-  const encoder = GIFEncoder();
-  let globalPalette = null;
-  let frameIndex = 0;
-
-  return {
-    addFrame(frameCanvas) {
-      const imageData = frameCanvas.getContext('2d').getImageData(0, 0, width, height);
-
-      if (frameIndex === 0) {
-        globalPalette = quantize(imageData.data, 256);
-      }
-
-      const index = applyPalette(imageData.data, globalPalette);
-
-      encoder.writeFrame(index, width, height, {
-        palette: frameIndex === 0 ? globalPalette : undefined,
-        delay: PLAYBACK_FRAME_MS,
-        dispose: 2,
-        repeat: frameIndex === 0 ? 0 : undefined
-      });
-
-      frameIndex += 1;
-    },
-    finish() {
-      encoder.finish();
-      return new Uint8Array(encoder.bytes());
-    }
-  };
 }
 
 async function createWebmRecorder(width, height) {
@@ -158,56 +126,6 @@ async function runInteractiveRecording(modeler, onProgress, signal, stopRequeste
   return frameCount;
 }
 
-async function recordSteppedGif(modeler, onProgress, signal, cropOptions = {}) {
-  onProgress?.({ phase: 'prepare', ratio: 0 });
-  await prepareAutoSimulation(modeler);
-  pauseSimulationAnimations(modeler);
-
-  const session = beginCaptureSession(modeler, { cropOptions });
-  const controller = createRecordingController(modeler, FRAME_MS);
-  let encoder = null;
-  let frameCount = 0;
-
-  try {
-    while (true) {
-      const frameStartedAt = performance.now();
-      controller.shouldAbort(signal);
-
-      const frame = await captureSessionFrame(session);
-
-      if (!encoder) {
-        encoder = createGifEncoder(frame.width, frame.height);
-      }
-
-      encoder.addFrame(frame);
-      frameCount += 1;
-      controller.updateState();
-
-      onProgress?.({
-        phase: 'record',
-        ratio: Math.min(0.9, frameCount / (EXPORT_FPS * 20))
-      });
-
-      if (controller.isComplete()) {
-        break;
-      }
-
-      controller.advance();
-      await paceFrame(frameStartedAt, PLAYBACK_FRAME_MS);
-    }
-  } finally {
-    endCaptureSession(session);
-    resumeSimulationAnimations(modeler);
-  }
-
-  if (!encoder) {
-    throw new Error('No frames captured');
-  }
-
-  onProgress?.({ phase: 'encode', ratio: 0.98 });
-  return encoder.finish();
-}
-
 async function recordSteppedWebm(modeler, onProgress, signal, cropOptions = {}) {
   onProgress?.({ phase: 'prepare', ratio: 0 });
   await prepareAutoSimulation(modeler);
@@ -258,38 +176,6 @@ async function recordSteppedWebm(modeler, onProgress, signal, cropOptions = {}) 
   return webmRecorder.finish();
 }
 
-async function recordInteractiveGif(modeler, onProgress, signal, stopRequested, cropOptions = {}) {
-  onProgress?.({ phase: 'prepare', ratio: 0 });
-  await prepareInteractiveSimulation(modeler);
-
-  onProgress?.({ phase: 'wait', ratio: 0 });
-  await waitForSimulationStart(modeler, signal);
-
-  let encoder = null;
-
-  const frameCount = await runInteractiveRecording(
-    modeler,
-    onProgress,
-    signal,
-    stopRequested,
-    async (frame) => {
-      if (!encoder) {
-        encoder = createGifEncoder(frame.width, frame.height);
-      }
-
-      encoder.addFrame(frame);
-    },
-    cropOptions
-  );
-
-  if (!encoder || frameCount === 0) {
-    throw new Error('No frames captured');
-  }
-
-  onProgress?.({ phase: 'encode', ratio: 0.98 });
-  return encoder.finish();
-}
-
 async function recordInteractiveWebm(modeler, onProgress, signal, stopRequested, cropOptions = {}) {
   onProgress?.({ phase: 'prepare', ratio: 0 });
   await prepareInteractiveSimulation(modeler);
@@ -331,23 +217,13 @@ export async function recordSimulationAnimation(modeler, format, options = {}) {
     cropOptions = {}
   } = options;
 
+  if (format !== 'simulation-webm') {
+    throw new Error(`Unsupported animation format: ${format}`);
+  }
+
   if (recordMode === 'interactive') {
-    if (format === 'simulation-webm') {
-      return recordInteractiveWebm(modeler, onProgress, signal, stopRequested, cropOptions);
-    }
-
-    if (format === 'simulation-gif') {
-      return recordInteractiveGif(modeler, onProgress, signal, stopRequested, cropOptions);
-    }
+    return recordInteractiveWebm(modeler, onProgress, signal, stopRequested, cropOptions);
   }
 
-  if (format === 'simulation-webm') {
-    return recordSteppedWebm(modeler, onProgress, signal, cropOptions);
-  }
-
-  if (format === 'simulation-gif') {
-    return recordSteppedGif(modeler, onProgress, signal, cropOptions);
-  }
-
-  throw new Error(`Unsupported animation format: ${format}`);
+  return recordSteppedWebm(modeler, onProgress, signal, cropOptions);
 }

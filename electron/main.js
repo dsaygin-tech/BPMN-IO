@@ -229,14 +229,6 @@ function buildMenu() {
               click: () => sendToRenderer('menu:export', { format: 'simulation-png' })
             },
             {
-              label: 'Simulation PDF (.pdf)…',
-              click: () => sendToRenderer('menu:export', { format: 'simulation-pdf' })
-            },
-            {
-              label: 'Simulation GIF (.gif)…',
-              click: () => sendToRenderer('menu:export', { format: 'simulation-gif' })
-            },
-            {
               label: 'Simulation WebM (.webm)…',
               click: () => sendToRenderer('menu:export', { format: 'simulation-webm' })
             }

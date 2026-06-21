@@ -99,14 +99,24 @@ export function initSimulationUi({
     setStepMode(modeler, stepMode);
   });
 
-  modeler.get('eventBus').on('tokenSimulation.toggleMode', (event) => {
+  const eventBus = modeler.get('eventBus');
+
+  // Update before other toggle listeners (e.g. reset on exit) run.
+  eventBus.on('tokenSimulation.toggleMode', 10000, (event) => {
     simulationActive = event.active;
+
+    if (!event.active) {
+      modeler.get('animation')?.pause();
+    }
+  });
+
+  eventBus.on('tokenSimulation.toggleMode', (event) => {
     onSimulationActiveChange?.(event.active);
   });
 
   // Run after bpmn-js-token-simulation resets the simulator (priority 5000).
-  modeler.get('eventBus').on('tokenSimulation.resetSimulation', 1000, () => {
-    if (!modeler.get('toggleMode')._active) {
+  eventBus.on('tokenSimulation.resetSimulation', 1000, () => {
+    if (!simulationActive) {
       return;
     }
 

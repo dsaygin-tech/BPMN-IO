@@ -1,6 +1,5 @@
 const dialog = document.querySelector('#recording-dialog');
 const progressOverlay = document.querySelector('#recording-progress');
-const formatSelect = document.querySelector('#recording-format');
 const modeSelect = document.querySelector('#recording-mode');
 const modeDescription = document.querySelector('#recording-mode-description');
 const cropModeSelect = document.querySelector('#recording-crop-mode');
@@ -77,7 +76,7 @@ export function requestAnimationExport() {
 
     const handleStart = () => {
       finish(resolve, {
-        format: formatSelect.value,
+        format: 'simulation-webm',
         recordMode: modeSelect.value,
         cropOptions: {
           cropMode: cropModeSelect.value,
