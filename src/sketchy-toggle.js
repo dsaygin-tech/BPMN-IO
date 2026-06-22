@@ -1,8 +1,10 @@
 import { t } from './app-ui-i18n.js';
 
+export const SKETCHY_FONT_FAMILY = '"Caveat", cursive';
+
 export const SKETCHY_TEXT_RENDERER = {
   defaultStyle: {
-    fontFamily: '"Nothing You Could Do", cursive',
+    fontFamily: SKETCHY_FONT_FAMILY,
     fontWeight: 'normal',
     fontSize: 16,
     lineHeight: 1.1
