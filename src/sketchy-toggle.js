@@ -1,7 +1,5 @@
 import { t } from './app-ui-i18n.js';
 
-export const SKETCHY_STORAGE_KEY = 'bpmn-io-sketchy-enabled';
-
 export const SKETCHY_TEXT_RENDERER = {
   defaultStyle: {
     fontFamily: '"Nothing You Could Do", cursive',
@@ -15,20 +13,21 @@ export const SKETCHY_TEXT_RENDERER = {
   }
 };
 
+let sketchyEnabled = false;
+
 export function isSketchyEnabled() {
-  return localStorage.getItem(SKETCHY_STORAGE_KEY) === 'true';
+  return sketchyEnabled;
 }
 
 export function setSketchyEnabled(enabled) {
-  localStorage.setItem(SKETCHY_STORAGE_KEY, String(enabled));
-  document.body.classList.toggle('sketchy-active', enabled);
+  sketchyEnabled = Boolean(enabled);
+  document.body.classList.toggle('sketchy-active', sketchyEnabled);
 }
 
 export function initSketchyUi({ toggle, onToggle }) {
-  const enabled = isSketchyEnabled();
-
-  toggle.checked = enabled;
-  document.body.classList.toggle('sketchy-active', enabled);
+  localStorage.removeItem('bpmn-io-sketchy-enabled');
+  setSketchyEnabled(false);
+  toggle.checked = false;
 
   toggle.addEventListener('change', async () => {
     const next = toggle.checked;

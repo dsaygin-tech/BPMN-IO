@@ -46,7 +46,18 @@ npm run dist:win
 npm run dist
 ```
 
-Установщики сохраняются в папку `release/`.
+Установщики сохраняются в подкаталоги `release/<версия>/<платформа>/`, например:
+
+```text
+release/
+  1.0.7/
+    mac/
+      BPMN-IO-1.0.7-arm64.dmg
+      BPMN-IO-1.0.7-arm64-mac.zip
+    win/
+      BPMN-IO Setup 1.0.7.exe
+      BPMN-IO-1.0.7-win-x64.exe
+```
 
 ### Сборка Windows x64 (не ARM)
 
@@ -55,13 +66,13 @@ npm run dist
 npm run dist:win -- --x64
 
 # Альтернатива напрямую через electron-builder
-npm run build && electron-builder --win --x64
+npm run build && node scripts/dist.mjs win --win --x64
 ```
 
 Если вы собираете на macOS и NSIS-установщик не собирается, используйте portable-сборку:
 
 ```bash
-npx electron-builder --win --x64 --config.win.target=portable
+npm run build && node scripts/dist.mjs win --win --x64 --config.win.target=portable
 ```
 
 ## Горячие клавиши

@@ -1,6 +1,6 @@
 {
   "name": "bpmn-io",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Desktop BPMN editor with token simulation",
   "engines": {
     "node": ">=20"
@@ -13,9 +13,9 @@
     "prebuild": "npm run pack:bpmnlint",
     "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "vite build",
-    "dist": "npm run build && electron-builder",
-    "dist:mac": "npm run build && electron-builder --mac",
-    "dist:win": "npm run build && electron-builder --win"
+    "dist": "npm run build && node scripts/dist.mjs auto",
+    "dist:mac": "npm run build && node scripts/dist.mjs mac --mac",
+    "dist:win": "npm run build && node scripts/dist.mjs win --win"
   },
   "build": {
     "appId": "io.bpmn.desktop",
