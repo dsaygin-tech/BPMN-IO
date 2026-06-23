@@ -54,6 +54,7 @@ import { initSimulationUi } from './simulation-ui.js';
 import { CyrillicKeyboardModule } from './keyboard-layout.js';
 import { initAppShortcuts } from './app-shortcuts.js';
 import { initKeyboardHelp } from './keyboard-help.js';
+import PreserveElementColorsModule from './preserve-element-colors-module.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
@@ -107,6 +108,7 @@ function buildAdditionalModules({ sketchyEnabled, locale }) {
     BpmnPropertiesProviderModule,
     TokenSimulationModule,
     SimulationSupportModule,
+    PreserveElementColorsModule,
     lintModule,
     BpmnColorPickerModule,
     CreateAppendAnythingModule,
