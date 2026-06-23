@@ -55,7 +55,7 @@
         </div>
       </div>
       <div class="toolbar-group toolbar-status">
-        <button type="button" id="btn-shortcuts" data-i18n-title="toolbar.shortcuts.title" title="Горячие клавиши">?</button>
+        <button type="button" id="btn-shortcuts" data-i18n-title="toolbar.help.title" title="Help">?</button>
         <span id="file-name">Untitled</span>
         <span id="dirty-indicator" hidden>•</span>
       </div>
@@ -107,13 +107,22 @@
     <dialog id="shortcuts-dialog" class="shortcuts-dialog">
       <form method="dialog" class="shortcuts-dialog-content">
         <header class="shortcuts-dialog-header">
-          <h2 data-i18n="shortcuts.title">Горячие клавиши</h2>
+          <h2 data-i18n="help.title">Help</h2>
           <button type="button" id="shortcuts-close" data-i18n-aria="toolbar.shortcuts.close" aria-label="Close">×</button>
         </header>
         <p class="shortcuts-note" data-i18n="shortcuts.note">
           Сочетания работают по физическим клавишам и в русской раскладке. В скобках — буквы на ЙЦУКЕН.
         </p>
         <div id="shortcuts-content"></div>
+        <footer class="help-about">
+          <p class="help-about-text">
+            <span data-i18n="help.aboutPrefix">Based on</span>
+            <a href="https://bpmn.io" class="help-external-link" data-external-link>bpmn.io</a>
+          </p>
+          <p class="help-about-links">
+            <a href="https://bpmn-io.github.io/bpmn-js-token-simulation/modeler.html" class="help-external-link" data-external-link data-i18n="help.link.tokenSimulation">Token Simulation demo</a>
+          </p>
+        </footer>
       </form>
     </dialog>
 

@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCurrentPath: () => ipcRenderer.invoke('file:get-current-path'),
   setCurrentPath: (filePath) => ipcRenderer.send('file:path-changed', filePath),
   setLocale: (locale) => ipcRenderer.send('app:set-locale', locale),
+  openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
   onMenu: (channel, callback) => {
     const handler = (_event, payload) => callback(payload);
     ipcRenderer.on(channel, handler);

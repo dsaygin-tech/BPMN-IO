@@ -49,6 +49,24 @@ export function initKeyboardHelp({
     dialog.close();
   });
 
+  dialog.querySelectorAll('[data-external-link]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+
+      const url = link.getAttribute('href');
+
+      if (!url) {
+        return;
+      }
+
+      if (window.electronAPI?.openExternal) {
+        window.electronAPI.openExternal(url);
+      } else {
+        window.open(url, '_blank', 'noopener');
+      }
+    });
+  });
+
   return {
     refresh(locale = getLocale()) {
       renderShortcutSections(content, locale);

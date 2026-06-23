@@ -387,6 +387,12 @@ ipcMain.handle('file:export', async (_event, payload) => {
 
 ipcMain.handle('file:get-current-path', () => currentFilePath);
 
+ipcMain.handle('shell:open-external', async (_event, url) => {
+  if (typeof url === 'string' && /^https?:\/\//.test(url)) {
+    await shell.openExternal(url);
+  }
+});
+
 ipcMain.on('file:path-changed', (_event, filePath) => {
   currentFilePath = filePath;
   updateWindowTitle(filePath);
