@@ -245,6 +245,20 @@ function buildMenu(locale = appLocale) {
       ]
     },
     {
+      label: menuT('edit', locale),
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'delete' },
+        { type: 'separator' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
       label: menuT('simulation', locale),
       submenu: [
         {
@@ -400,7 +414,7 @@ if (process.platform === 'darwin') {
   });
 }
 
-const gotSingleInstanceLock = app.requestSingleInstanceLock();
+const gotSingleInstanceLock = isDev || app.requestSingleInstanceLock();
 
 if (!gotSingleInstanceLock) {
   app.quit();

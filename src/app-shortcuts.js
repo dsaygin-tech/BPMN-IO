@@ -1,16 +1,4 @@
-function isTypingTarget(target) {
-  if (!(target instanceof Element)) {
-    return false;
-  }
-
-  if (target.closest('dialog[open], .bio-properties-panel-input, .djs-direct-editing-content')) {
-    return true;
-  }
-
-  const tag = target.tagName;
-
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
-}
+import { isTextInputTarget } from './keyboard-input.js';
 
 function isCmd(event) {
   if (event.altKey) {
@@ -28,7 +16,7 @@ export function initAppShortcuts({
   onToggleSimulation
 }) {
   document.addEventListener('keydown', (event) => {
-    if (event.defaultPrevented || isTypingTarget(event.target) || !isCmd(event)) {
+    if (event.defaultPrevented || isTextInputTarget(event.target) || !isCmd(event)) {
       return;
     }
 

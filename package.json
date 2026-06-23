@@ -1,9 +1,12 @@
 {
   "name": "bpmn-io",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Desktop BPMN editor with token simulation",
   "engines": {
     "node": ">=20"
+  },
+  "overrides": {
+    "min-dash": "4.2.1"
   },
   "type": "module",
   "main": "electron/main.js",
@@ -11,8 +14,8 @@
     "pack:bpmnlint": "bpmnlint-pack-config -c src/.bpmnlintrc -o src/bpmnlint-config.js -t es",
     "predev": "npm run pack:bpmnlint",
     "prebuild": "npm run pack:bpmnlint",
-    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "build": "vite build",
+    "dev": "bash scripts/run-with-node.sh concurrently --kill-others-on-fail -n vite,electron -c blue,green \"node --require ./scripts/node-polyfills.cjs ./node_modules/vite/bin/vite.js\" \"wait-on http://localhost:5173 && ./node_modules/.bin/electron .\"",
+    "build": "bash scripts/run-with-node.sh node --require ./scripts/node-polyfills.cjs ./node_modules/vite/bin/vite.js build",
     "dist": "npm run build && node scripts/dist.mjs auto",
     "dist:mac": "npm run build && node scripts/dist.mjs mac --mac",
     "dist:win": "npm run build && node scripts/dist.mjs win --win"

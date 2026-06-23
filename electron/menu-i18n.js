@@ -1,6 +1,7 @@
 export const MENU_I18N = {
   en: {
     file: 'File',
+    edit: 'Edit',
     new: 'New',
     open: 'Open…',
     save: 'Save',
@@ -43,6 +44,7 @@ export const MENU_I18N = {
   },
   ru: {
     file: 'Файл',
+    edit: 'Правка',
     new: 'Создать',
     open: 'Открыть…',
     save: 'Сохранить',

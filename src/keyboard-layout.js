@@ -1,8 +1,15 @@
 import {
   hasModifier,
   isCmd,
-  isShift
+  isCopy,
+  isCut,
+  isKey,
+  isPaste,
+  isRedo,
+  isShift,
+  isUndo
 } from 'diagram-js/lib/features/keyboard/KeyboardUtil.js';
+import { shouldIgnoreDiagramShortcut } from './keyboard-input.js';
 
 const CYRILLIC_BY_LATIN = {
   a: [ 'ф', 'Ф' ],
@@ -86,6 +93,19 @@ function patchKeyboardIsKey(keyboard) {
   keyboard.isKey.__cyrillicPatched = true;
 }
 
+function isNativeTextEditingShortcut(event) {
+  if (!isCmd(event)) {
+    return false;
+  }
+
+  return isCopy(event)
+    || isPaste(event)
+    || isCut(event)
+    || isUndo(event)
+    || isRedo(event)
+    || isKey([ 'a', 'A' ], event);
+}
+
 export const CyrillicKeyboardModule = {
   __init__: [
     [
@@ -110,6 +130,14 @@ export const CyrillicKeyboardModule = {
         eventBus.on('keyboard.init', () => {
           keyboard.addListener(1500, (context) => {
             const event = context.keyEvent;
+
+            if (shouldIgnoreDiagramShortcut(context, injector) && isNativeTextEditingShortcut(event)) {
+              return false;
+            }
+
+            if (shouldIgnoreDiagramShortcut(context, injector)) {
+              return;
+            }
 
             if (isCmd(event)) {
               if (matchKey([ 'z', 'Z' ], event) && !isShift(event)) {
@@ -145,6 +173,10 @@ export const CyrillicKeyboardModule = {
           });
 
           keyboard.addListener(10001, (context) => {
+            if (shouldIgnoreDiagramShortcut(context, injector)) {
+              return;
+            }
+
             const event = context.keyEvent;
 
             if (hasModifier(event)) {
