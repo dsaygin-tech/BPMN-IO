@@ -1,6 +1,6 @@
 {
   "name": "bpmn-io",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Desktop BPMN editor with token simulation",
   "engines": {
     "node": ">=20"
