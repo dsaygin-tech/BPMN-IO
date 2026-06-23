@@ -55,6 +55,7 @@ import { CyrillicKeyboardModule } from './keyboard-layout.js';
 import { initAppShortcuts } from './app-shortcuts.js';
 import { initKeyboardHelp } from './keyboard-help.js';
 import PreserveElementColorsModule from './preserve-element-colors-module.js';
+import ContextPadLayoutModule from './context-pad-layout.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
@@ -116,7 +117,8 @@ function buildAdditionalModules({ sketchyEnabled, locale }) {
     minimapModule,
     createTranslateModule(locale),
     CyrillicKeyboardModule,
-    DesktopModule
+    DesktopModule,
+    ContextPadLayoutModule
   ];
 
   if (sketchyEnabled) {
@@ -192,12 +194,13 @@ async function recreateModeler(options = getModelerOptions()) {
 function setDirty(dirty) {
   isDirty = dirty;
   dirtyIndicatorEl.hidden = !dirty;
+  dirtyIndicatorEl.textContent = dirty ? '• unsaved' : '';
+  fileNameEl.textContent = `${dirty ? '* ' : ''}${currentFilePath ? currentFilePath.split(/[/\\]/).pop() : t('file.untitled')}`;
 }
 
 function setFileName(filePath) {
   currentFilePath = filePath;
-  const name = filePath ? filePath.split(/[/\\]/).pop() : t('file.untitled');
-  fileNameEl.textContent = name;
+  fileNameEl.textContent = `${isDirty ? '* ' : ''}${filePath ? filePath.split(/[/\\]/).pop() : t('file.untitled')}`;
 
   if (window.electronAPI) {
     window.electronAPI.setCurrentPath(filePath);
@@ -253,7 +256,32 @@ async function openFileFromDialog() {
 }
 
 async function saveDiagram(filePath = null) {
-  await exportDiagramToFormat('bpmn', filePath);
+  try {
+    const exportData = await exportDiagram(modeler, 'bpmn');
+    const { content } = exportData;
+
+    if (window.electronAPI) {
+      const result = filePath
+        ? await window.electronAPI.saveFile(content, filePath)
+        : await window.electronAPI.saveFileAs(content);
+
+      if (result?.filePath) {
+        setFileName(result.filePath);
+        setDirty(false);
+      }
+
+      return;
+    }
+
+    await saveExportResult(exportData, 'bpmn', filePath);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      return;
+    }
+
+    console.error(error);
+    alert(translateUserMessage(error.message));
+  }
 }
 
 async function saveExportResult(exportData, format, filePath = null) {
@@ -365,7 +393,7 @@ attachModeler(modeler);
 initAppShortcuts({
   onNew: createNewDiagram,
   onOpen: openFileFromDialog,
-  onSave: () => saveDiagram(currentFilePath),
+  onSave: () => saveDiagram(currentFilePath || null),
   onSaveAs: () => saveDiagram(),
   onToggleSimulation: toggleSimulation
 });
@@ -406,7 +434,7 @@ initLocaleUi({
 
 document.querySelector('#btn-new').addEventListener('click', createNewDiagram);
 document.querySelector('#btn-open').addEventListener('click', openFileFromDialog);
-document.querySelector('#btn-save').addEventListener('click', () => saveDiagram(currentFilePath));
+document.querySelector('#btn-save').addEventListener('click', () => saveDiagram(currentFilePath || null));
 document.querySelector('#btn-save-as').addEventListener('click', () => saveDiagram());
 
 exportSimulationButton = document.querySelector('#btn-export-simulation');

@@ -52,6 +52,10 @@ body {
 
 .toolbar-status {
   margin-left: auto;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
   color: #666;
   font-size: 12px;
 }
@@ -158,9 +162,10 @@ body.token-simulation-active .simulation-parent.paused .bts-animation-tokens .bt
 }
 
 #dirty-indicator {
-  color: #10d070;
-  font-size: 20px;
-  line-height: 1;
+  color: #8a6d3b;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 500;
 }
 
 #btn-shortcuts {
@@ -238,6 +243,85 @@ button.primary.active {
 .dropdown-menu button.simulation-export {
   color: #0a9f5c;
   font-weight: 500;
+}
+
+.djs-context-pad {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #d5d9df;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  width: auto;
+  min-width: 0;
+  max-width: 160px;
+}
+
+.djs-context-pad.open {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.djs-context-pad .context-pad-actions,
+.djs-context-pad .context-pad-footer-tools,
+.djs-context-pad .context-pad-footer-danger {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
+.djs-context-pad .entry {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+}
+
+.djs-context-pad .context-pad-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.djs-context-pad .context-pad-footer-divider {
+  width: calc(100% - 4px);
+  height: 0;
+  border-top: 1px solid #b8bec8;
+  margin: 2px auto 4px;
+}
+
+.djs-context-pad .context-pad-footer-divider-inner {
+  margin: 2px auto;
+}
+
+.djs-context-pad .context-pad-footer-danger .entry {
+  color: #c62828;
+}
+
+.djs-context-pad .context-pad-footer-danger .bpmn-icon-trash:before {
+  color: #c62828;
+}
+
+.djs-context-pad .context-pad-footer-danger .entry:hover {
+  background: #ffebee;
+}
+
+.djs-context-pad .context-pad-footer-danger .entry:hover.bpmn-icon-trash:before {
+  color: #b71c1c;
+}
+
+.djs-context-pad .context-pad-footer-danger .entry svg {
+  fill: currentColor;
 }
 
 .workspace {
