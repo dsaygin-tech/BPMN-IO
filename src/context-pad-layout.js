@@ -81,11 +81,10 @@ function reorganizeContextPad(pad) {
 
 export default {
   __init__: [
-    'eventBus',
-    function(eventBus) {
+    [ 'eventBus', function(eventBus) {
       eventBus.on('contextPad.open', ({ current }) => {
         reorganizeContextPad(current?.html);
       });
-    }
+    } ]
   ]
 };

@@ -64,8 +64,11 @@ export function createCustomTranslate(locale) {
 }
 
 export function createTranslateModule(locale) {
+  const translate = createCustomTranslate(locale);
+
   return {
-    translate: ['value', createCustomTranslate(locale)]
+    translate: [ 'value', translate ],
+    t: [ 'value', translate ]
   };
 }
 

@@ -73,23 +73,35 @@ const DesktopModule = {
   __init__: [
     [
       'eventBus',
-      'toggleMode',
-      'grid',
-      function (eventBus, toggleMode, grid) {
-        let gridVisibleBeforeSimulation = null;
+      'gridSnapping',
+      function (eventBus, gridSnapping) {
+        let gridSnappingWasActive = null;
 
-        eventBus.on('tokenSimulation.toggleMode', (event) => {
+        // Capture state before other toggle listeners run.
+        eventBus.on('tokenSimulation.toggleMode', 15000, (event) => {
+          if (event.active && gridSnappingWasActive === null) {
+            gridSnappingWasActive = gridSnapping.active;
+          }
+        });
+
+        // Hide on enter / restore on exit after other listeners finish.
+        eventBus.on('tokenSimulation.toggleMode', 500, (event) => {
           document.body.classList.toggle('token-simulation-active', event.active);
           exportSimulationButton.hidden = !event.active;
           refreshExportMenu?.();
 
           if (event.active) {
-            gridVisibleBeforeSimulation = grid.isVisible();
-            grid.toggle(false);
-          } else if (gridVisibleBeforeSimulation !== null) {
-            grid.toggle(gridVisibleBeforeSimulation);
-            gridVisibleBeforeSimulation = null;
+            gridSnapping.setActive(false);
+            return;
           }
+
+          if (gridSnappingWasActive === null) {
+            return;
+          }
+
+          const wasActive = gridSnappingWasActive;
+          gridSnappingWasActive = null;
+          gridSnapping.setActive(wasActive);
         });
       }
     ]
