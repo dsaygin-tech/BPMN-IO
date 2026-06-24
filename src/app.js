@@ -57,6 +57,7 @@ import { initKeyboardHelp } from './keyboard-help.js';
 import { initSettingsUi } from './settings-ui.js';
 import PreserveElementColorsModule from './preserve-element-colors-module.js';
 import ContextPadLayoutModule from './context-pad-layout.js';
+import TextAnnotationModule from './text-annotation-module.js';
 
 const fileNameEl = document.querySelector('#file-name');
 const dirtyIndicatorEl = document.querySelector('#dirty-indicator');
@@ -128,7 +129,8 @@ function buildAdditionalModules({ sketchyEnabled, locale }) {
     createTranslateModule(locale),
     CyrillicKeyboardModule,
     DesktopModule,
-    ContextPadLayoutModule
+    ContextPadLayoutModule,
+    TextAnnotationModule
   ];
 
   if (sketchyEnabled) {
