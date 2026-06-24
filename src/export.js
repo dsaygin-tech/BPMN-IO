@@ -1,9 +1,5 @@
 import { jsPDF } from 'jspdf';
 import { svg2pdf } from 'svg2pdf.js';
-import {
-  CAPTURE_SCALE_STATIC,
-  captureSimulationFrame
-} from './simulation-capture.js';
 import { recordSimulationAnimation } from './simulation-recorder.js';
 
 const MIN_EXPORT_PADDING = 48;
@@ -52,6 +48,7 @@ export const EXPORT_FORMATS = {
     mimeType: 'image/png',
     encoding: 'binary',
     requiresSimulation: true,
+    isAnimated: true,
     nameSuffix: '-simulation'
   },
   'simulation-webm': {
@@ -193,14 +190,6 @@ function serializeModdleElement(element, seen = new WeakSet()) {
   return result;
 }
 
-async function captureSimulationSnapshot(modeler) {
-  if (!isSimulationActive(modeler)) {
-    throw new Error('Enable Token Simulation before exporting a simulation snapshot.');
-  }
-
-  return captureSimulationFrame(modeler, CAPTURE_SCALE_STATIC);
-}
-
 export async function exportSimulationAnimation(modeler, format, options = {}) {
   const config = EXPORT_FORMATS[format];
 
@@ -325,22 +314,6 @@ export async function exportDiagram(modeler, format) {
     const definitions = modeler.getDefinitions();
     const json = serializeModdleElement(definitions);
     return { content: JSON.stringify(json, null, 2), ...config };
-  }
-
-  if (format === 'simulation-png') {
-    const snapshot = await captureSimulationSnapshot(modeler);
-    const pngBlob = await new Promise((resolve, reject) => {
-      snapshot.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-          return;
-        }
-
-        reject(new Error('Failed to create PNG'));
-      }, 'image/png');
-    });
-    const content = await blobToBase64(pngBlob);
-    return { content, ...config };
   }
 
   const preparedSvg = await getPreparedSvg(modeler);

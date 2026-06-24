@@ -231,12 +231,8 @@ function buildMenu(locale = appLocale) {
             },
             { type: 'separator' },
             {
-              label: menuT('exportSimulationPng', locale),
-              click: () => sendToRenderer('menu:export', { format: 'simulation-png' })
-            },
-            {
-              label: menuT('exportSimulationWebm', locale),
-              click: () => sendToRenderer('menu:export', { format: 'simulation-webm' })
+              label: menuT('exportAnimation', locale),
+              click: () => sendToRenderer('menu:export', { format: 'export-animation' })
             }
           ]
         },

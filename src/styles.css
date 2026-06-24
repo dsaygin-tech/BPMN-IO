@@ -1,7 +1,5 @@
 @import './assets/fonts/caveat/caveat.css';
 
-@import './assets/fonts/caveat/caveat.css';
-
 *,
 *::before,
 *::after {
@@ -168,12 +166,33 @@ body.token-simulation-active .simulation-parent.paused .bts-animation-tokens .bt
   font-weight: 500;
 }
 
-#btn-shortcuts {
-  width: 28px;
-  height: 28px;
+#btn-shortcuts,
+#btn-settings,
+.toolbar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border-radius: 50%;
-  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.toolbar-icon .toolbar-icon-dot {
+  fill: currentColor;
+  stroke: none;
 }
 
 button {
@@ -238,6 +257,11 @@ button.primary.active {
   height: 1px;
   margin: 4px 0;
   background: #e0e0e0;
+}
+
+.dropdown-menu button.export-animation-item {
+  color: #0a9f5c;
+  font-weight: 500;
 }
 
 .dropdown-menu button.simulation-export {
@@ -442,6 +466,60 @@ body.token-simulation-active .bts-set-animation-speed {
   color: #212121;
   font-size: 24px;
   font-weight: 500;
+}
+
+.settings-dialog {
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 360px;
+}
+
+.settings-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.settings-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.settings-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.settings-dialog-header button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #444;
+  font-size: 13px;
+}
+
+.settings-field select {
+  padding: 8px 10px;
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
 }
 
 .recording-dialog {

@@ -1,46 +1,46 @@
 import { EXPORT_FORMATS } from './export.js';
-import { getExportLabel } from './app-ui-i18n.js';
+import { getExportLabel, t } from './app-ui-i18n.js';
+import { getLocale } from './i18n.js';
 
-function bindExportItems(exportMenu, onExport) {
+function bindExportMenu(exportMenu, onExport, onExportAnimation) {
   exportMenu.querySelectorAll('[data-format]').forEach((item) => {
     item.addEventListener('click', () => {
       exportMenu.classList.remove('open');
       onExport(item.dataset.format);
     });
   });
+
+  const animationItem = exportMenu.querySelector('[data-action="export-animation"]');
+
+  if (animationItem) {
+    animationItem.addEventListener('click', () => {
+      exportMenu.classList.remove('open');
+      onExportAnimation?.();
+    });
+  }
 }
 
-export function renderExportMenu({ onExport }) {
+export function renderExportMenu({ onExport, onExportAnimation }) {
   const exportMenu = document.querySelector('#export-menu');
+  const locale = getLocale();
   const standardFormats = Object.values(EXPORT_FORMATS).filter((format) => !format.requiresSimulation);
-  const snapshotFormats = Object.values(EXPORT_FORMATS).filter(
-    (format) => format.requiresSimulation && !format.isAnimated
-  );
-  const animationFormats = Object.values(EXPORT_FORMATS).filter((format) => format.isAnimated);
 
   let html = standardFormats.map((format) => (
     `<button type="button" data-format="${format.id}">${getExportLabel(format.id)} (.${format.extension})</button>`
   )).join('');
 
   html += '<div class="dropdown-divider"></div>';
-  html += snapshotFormats.map((format) => (
-    `<button type="button" data-format="${format.id}" class="simulation-export">${getExportLabel(format.id)} (.${format.extension})</button>`
-  )).join('');
-
-  html += '<div class="dropdown-divider"></div>';
-  html += animationFormats.map((format) => (
-    `<button type="button" data-format="${format.id}" class="simulation-export">${getExportLabel(format.id)} (.${format.extension})</button>`
-  )).join('');
+  html += `<button type="button" data-action="export-animation" class="export-animation-item">${t('toolbar.exportAnimation', locale)}</button>`;
 
   exportMenu.innerHTML = html;
-  bindExportItems(exportMenu, onExport);
+  bindExportMenu(exportMenu, onExport, onExportAnimation);
 }
 
-export function initExportMenu({ onExport }) {
+export function initExportMenu({ onExport, onExportAnimation }) {
   const exportButton = document.querySelector('#btn-export');
   const exportMenu = document.querySelector('#export-menu');
 
-  renderExportMenu({ onExport });
+  renderExportMenu({ onExport, onExportAnimation });
 
   exportButton.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -54,6 +54,6 @@ export function initExportMenu({ onExport }) {
   });
 
   return () => {
-    renderExportMenu({ onExport });
+    renderExportMenu({ onExport, onExportAnimation });
   };
 }

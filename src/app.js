@@ -54,6 +54,7 @@ import { initSimulationUi } from './simulation-ui.js';
 import { CyrillicKeyboardModule } from './keyboard-layout.js';
 import { initAppShortcuts } from './app-shortcuts.js';
 import { initKeyboardHelp } from './keyboard-help.js';
+import { initSettingsUi } from './settings-ui.js';
 import PreserveElementColorsModule from './preserve-element-colors-module.js';
 import ContextPadLayoutModule from './context-pad-layout.js';
 
@@ -65,7 +66,6 @@ const propertiesPanelResizer = document.querySelector('#properties-panel-resizer
 let currentFilePath = null;
 let isDirty = false;
 let refreshExportMenu = null;
-let exportSimulationButton = null;
 let simulationUi = null;
 let keyboardHelpUi = null;
 
@@ -87,8 +87,6 @@ const DesktopModule = {
         // Hide on enter / restore on exit after other listeners finish.
         eventBus.on('tokenSimulation.toggleMode', 500, (event) => {
           document.body.classList.toggle('token-simulation-active', event.active);
-          exportSimulationButton.hidden = !event.active;
-          refreshExportMenu?.();
 
           if (event.active) {
             gridSnapping.setActive(false);
@@ -379,6 +377,11 @@ async function exportSimulationAnimationToFile(format = null) {
 
 async function exportDiagramToFormat(format, filePath = null) {
   try {
+    if (format === 'export-animation') {
+      await exportSimulationAnimationToFile();
+      return;
+    }
+
     if (EXPORT_FORMATS[format]?.isAnimated) {
       await exportSimulationAnimationToFile(format);
       return;
@@ -416,6 +419,12 @@ keyboardHelpUi = initKeyboardHelp({
   content: document.querySelector('#shortcuts-content')
 });
 
+initSettingsUi({
+  button: document.querySelector('#btn-settings'),
+  dialog: document.querySelector('#settings-dialog'),
+  closeButton: document.querySelector('#settings-close')
+});
+
 initSketchyUi({
   toggle: document.querySelector('#sketchy-mode'),
   onToggle: (sketchyEnabled) => recreateModeler({
@@ -449,21 +458,20 @@ document.querySelector('#btn-open').addEventListener('click', openFileFromDialog
 document.querySelector('#btn-save').addEventListener('click', () => saveDiagram(currentFilePath || null));
 document.querySelector('#btn-save-as').addEventListener('click', () => saveDiagram());
 
-exportSimulationButton = document.querySelector('#btn-export-simulation');
-exportSimulationButton.hidden = true;
-exportSimulationButton.addEventListener('click', () => {
+function handleExportAnimation() {
   exportSimulationAnimationToFile().catch((error) => {
     if (error.name !== 'AbortError') {
       console.error(error);
       alert(translateUserMessage(error.message));
     }
   });
-});
+}
 
 initRecordingUi();
 
 refreshExportMenu = initExportMenu({
-  onExport: (format) => exportDiagramToFormat(format)
+  onExport: (format) => exportDiagramToFormat(format),
+  onExportAnimation: handleExportAnimation
 });
 
 applyAppUiLocale(getLocale(), {

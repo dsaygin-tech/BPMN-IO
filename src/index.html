@@ -9,10 +9,33 @@
   <body>
     <header class="toolbar">
       <div class="toolbar-group">
-        <button type="button" id="btn-new" data-i18n="toolbar.new" data-i18n-title="toolbar.new.title">New</button>
-        <button type="button" id="btn-open" data-i18n="toolbar.open" data-i18n-title="toolbar.open.title">Open</button>
-        <button type="button" id="btn-save" data-i18n="toolbar.save" data-i18n-title="toolbar.save.title">Save</button>
-        <button type="button" id="btn-save-as" data-i18n="toolbar.saveAs" data-i18n-title="toolbar.saveAs.title">Save As</button>
+        <button type="button" id="btn-new" class="toolbar-icon-btn" data-i18n-title="toolbar.new.title" data-i18n-aria="toolbar.new.title" title="New diagram (Ctrl+N)" aria-label="New diagram">
+          <svg class="toolbar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M11 2.5H5.5A1.5 1.5 0 0 0 4 4v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 16 14V6.5L11 2.5Z" />
+            <path d="M11 2.5V6.5H15" />
+            <path d="M10 9.5V14.5" />
+            <path d="M7.5 12H12.5" />
+          </svg>
+        </button>
+        <button type="button" id="btn-open" class="toolbar-icon-btn" data-i18n-title="toolbar.open.title" data-i18n-aria="toolbar.open.title" title="Open file (Ctrl+O)" aria-label="Open file">
+          <svg class="toolbar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h2.75L9.5 7H15a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 16H5a1.5 1.5 0 0 1-1.5-1.5V6.5Z" />
+          </svg>
+        </button>
+        <button type="button" id="btn-save" class="toolbar-icon-btn" data-i18n-title="toolbar.save.title" data-i18n-aria="toolbar.save.title" title="Save (Ctrl+S)" aria-label="Save">
+          <svg class="toolbar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M4.5 3.5h7.5L15.5 7v9.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5V3.5Z" />
+            <path d="M7.5 3.5V7h5V3.5" />
+            <path d="M7.5 11.5h5v4h-5v-4Z" />
+          </svg>
+        </button>
+        <button type="button" id="btn-save-as" class="toolbar-icon-btn" data-i18n-title="toolbar.saveAs.title" data-i18n-aria="toolbar.saveAs.title" title="Save as (Ctrl+Shift+S)" aria-label="Save as">
+          <svg class="toolbar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <path d="M5.5 14.5V6.5A1.5 1.5 0 0 1 7 5h5.5" />
+            <path d="M7.5 5.5h5.5L15.5 8v7.5a1.5 1.5 0 0 1-1.5 1.5H7.5a1.5 1.5 0 0 1-1.5-1.5V5.5Z" />
+            <path d="M10.5 5.5V8h2.5" />
+          </svg>
+        </button>
         <div class="dropdown">
           <button type="button" id="btn-export" data-i18n="toolbar.export" data-i18n-title="toolbar.export.title">Export ▾</button>
           <div class="dropdown-menu" id="export-menu"></div>
@@ -25,21 +48,8 @@
             <span class="toggle-track" aria-hidden="true"></span>
           </span>
         </label>
-        <label class="toolbar-field" data-i18n-title="toolbar.language.title">
-          <span data-i18n="toolbar.language">Language</span>
-          <select id="locale-select" data-i18n-aria="toolbar.language.aria" aria-label="Diagram editor language"></select>
-        </label>
       </div>
       <div class="toolbar-group">
-        <button
-          type="button"
-          id="btn-export-simulation"
-          class="primary"
-          data-i18n="toolbar.exportAnimation"
-          data-i18n-title="toolbar.exportAnimation.title"
-        >
-          Export Animation
-        </button>
         <div id="simulation-controls" class="simulation-controls">
           <label class="toolbar-field">
             <span data-i18n="toolbar.simulation.start">Start</span>
@@ -55,7 +65,19 @@
         </div>
       </div>
       <div class="toolbar-group toolbar-status">
-        <button type="button" id="btn-shortcuts" data-i18n-title="toolbar.help.title" title="Help">?</button>
+        <button type="button" id="btn-settings" class="toolbar-icon-btn" data-i18n-title="settings.title" data-i18n-aria="settings.title" title="Settings" aria-label="Settings">
+          <svg class="toolbar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <circle cx="10" cy="10" r="2.25" />
+            <path d="M10 3v1.75M10 15.25V17M3 10h1.75M15.25 10H17M5.05 5.05l1.24 1.24M13.71 13.71l1.24 1.24M5.05 14.95l1.24-1.24M13.71 6.29l1.24-1.24" />
+          </svg>
+        </button>
+        <button type="button" id="btn-shortcuts" class="toolbar-icon-btn" data-i18n-title="toolbar.help.title" data-i18n-aria="toolbar.help.title" title="Help" aria-label="Help">
+          <svg class="toolbar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M7.75 7.75a2.25 2.25 0 0 1 4.1 1.1c0 1.35-1.85 1.9-1.85 1.9" />
+            <circle class="toolbar-icon-dot" cx="10" cy="14.25" r="0.75" />
+          </svg>
+        </button>
         <span id="file-name">Untitled</span>
         <span id="dirty-indicator" hidden>•</span>
       </div>
@@ -73,6 +95,13 @@
         <p id="recording-mode-description">
           Simulation starts automatically from the beginning. Recording stops when all tokens finish.
         </p>
+        <label class="recording-field">
+          <span data-i18n="recording.format">Format</span>
+          <select id="recording-format">
+            <option value="simulation-png" data-i18n="recording.format.png">PNG — animated image</option>
+            <option value="simulation-webm" data-i18n="recording.format.webm">WebM — video</option>
+          </select>
+        </label>
         <label class="recording-field">
           <span data-i18n="recording.mode">Recording mode</span>
           <select id="recording-mode">
@@ -101,6 +130,19 @@
           <button type="button" id="recording-cancel" data-i18n="recording.cancel">Cancel</button>
           <button type="button" id="recording-start" class="primary" data-i18n="recording.start">Start export</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="settings-dialog" class="settings-dialog">
+      <form method="dialog" class="settings-dialog-content">
+        <header class="settings-dialog-header">
+          <h2 data-i18n="settings.title">Settings</h2>
+          <button type="button" id="settings-close" data-i18n-aria="settings.close" aria-label="Close">×</button>
+        </header>
+        <label class="settings-field">
+          <span data-i18n="toolbar.language">Language</span>
+          <select id="locale-select" data-i18n-aria="toolbar.language.aria" aria-label="Diagram editor language"></select>
+        </label>
       </form>
     </dialog>
 

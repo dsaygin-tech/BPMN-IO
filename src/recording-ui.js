@@ -3,6 +3,7 @@ import { getLocale } from './i18n.js';
 
 const dialog = document.querySelector('#recording-dialog');
 const progressOverlay = document.querySelector('#recording-progress');
+const formatSelect = document.querySelector('#recording-format');
 const modeSelect = document.querySelector('#recording-mode');
 const modeDescription = document.querySelector('#recording-mode-description');
 const cropModeSelect = document.querySelector('#recording-crop-mode');
@@ -82,7 +83,7 @@ export function requestAnimationExport() {
 
     const handleStart = () => {
       finish(resolve, {
-        format: 'simulation-webm',
+        format: formatSelect.value,
         recordMode: modeSelect.value,
         cropOptions: {
           cropMode: cropModeSelect.value,
@@ -97,6 +98,7 @@ export function requestAnimationExport() {
 
     updateModeDescription();
     updateCropFieldsVisibility();
+    formatSelect.value = 'simulation-png';
     startButton.addEventListener('click', handleStart);
     dialog.addEventListener('cancel', handleCancel);
     dialog.showModal();
